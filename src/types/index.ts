@@ -221,11 +221,10 @@ export interface FormData {
 	ahpraNumber: string
 	ahpraRegistrationDate: string
 	practiceName: string
-	practiceAddress: string
 	city: string
 	state: string
 	postcode: string
-	yearsExperience: string
+	experience: string
 	practiceDescription: string
 }
 

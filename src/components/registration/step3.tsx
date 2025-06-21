@@ -6,19 +6,27 @@ interface Step3Props {
 	formData: FormData
 	errors: Partial<FormData>
 	updateFormData: (field: keyof FormData, value: string) => void
+	onSubmit: () => void
 }
 
-export function Step3({ formData, errors, updateFormData }: Step3Props) {
+export function Step3({ formData, errors, updateFormData, onSubmit }: Step3Props) {
+	const handleKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === 'Enter' && !e.shiftKey) {
+			e.preventDefault()
+			onSubmit()
+		}
+	}
+
 	return (
 		<div className="flex-1 flex items-start justify-center px-6 pt-12 pb-6">
 			<div className="max-w-2xl mx-auto w-full text-center">
 				<div className="mb-6">
 					<span className="text-[#1C1B3A]/60 text-lg font-medium">Step 3</span>
 					<h1 className="text-3xl font-bold text-[#1C1B3A] mt-2 mb-3 font-['Karla']">
-						Experience & background
+						Experience and background
 					</h1>
 					<p className="text-base text-slate-600 font-['Karla']">
-						Tell us about your experience and practice.
+						Tell us about your professional background and experience.
 					</p>
 				</div>
 				
@@ -26,12 +34,13 @@ export function Step3({ formData, errors, updateFormData }: Step3Props) {
 					<div className="space-y-5">
 						<FormField
 							label="Years of Experience"
-							name="yearsExperience"
+							name="experience"
 							type="select"
-							placeholder="Select years of experience"
-							value={formData.yearsExperience}
-							onChange={(value) => updateFormData('yearsExperience', value)}
-							error={errors.yearsExperience}
+							placeholder="Select your experience level"
+							value={formData.experience}
+							onChange={(value) => updateFormData('experience', value)}
+							onKeyDown={handleKeyDown}
+							error={errors.experience}
 							options={EXPERIENCE_RANGES}
 						/>
 						
@@ -42,7 +51,8 @@ export function Step3({ formData, errors, updateFormData }: Step3Props) {
 							placeholder="Tell us a bit more about your practice and what you'd like to achieve with HeyDoc (optional)"
 							value={formData.practiceDescription}
 							onChange={(value) => updateFormData('practiceDescription', value)}
-							rows={4}
+							onKeyDown={handleKeyDown}
+							error={errors.practiceDescription}
 						/>
 					</div>
 				</div>

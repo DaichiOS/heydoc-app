@@ -5,6 +5,7 @@ interface FormFieldProps {
 	placeholder?: string
 	value: string
 	onChange: (value: string) => void
+	onKeyDown?: (e: React.KeyboardEvent) => void
 	error?: string
 	required?: boolean
 	options?: Array<{ value: string; label: string }>
@@ -19,6 +20,7 @@ export function FormField({
 	placeholder,
 	value,
 	onChange,
+	onKeyDown,
 	error,
 	required = false,
 	options,
@@ -36,6 +38,7 @@ export function FormField({
 					name={name}
 					value={value}
 					onChange={(e) => onChange(e.target.value)}
+					onKeyDown={onKeyDown}
 					className={baseClasses}
 				>
 					<option value="">{placeholder}</option>
@@ -55,6 +58,12 @@ export function FormField({
 					placeholder={placeholder}
 					value={value}
 					onChange={(e) => onChange(e.target.value)}
+					onKeyDown={(e) => {
+						// Only trigger onKeyDown for Ctrl+Enter or Cmd+Enter in textarea
+						if (onKeyDown && (e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+							onKeyDown(e)
+						}
+					}}
 					rows={rows}
 					className={`${baseClasses} resize-none`}
 				/>
@@ -68,6 +77,7 @@ export function FormField({
 				placeholder={placeholder}
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
+				onKeyDown={onKeyDown}
 				className={baseClasses}
 			/>
 		)

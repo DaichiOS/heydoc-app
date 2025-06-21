@@ -15,11 +15,10 @@ const initialFormData: FormData = {
 	ahpraNumber: '',
 	ahpraRegistrationDate: '',
 	practiceName: '',
-	practiceAddress: '',
 	city: '',
 	state: '',
 	postcode: '',
-	yearsExperience: '',
+	experience: '',
 	practiceDescription: '',
 }
 

@@ -39,11 +39,11 @@ export default function RegisterPage() {
 
 	const handleModalClose = () => {
 		setSubmission({
-			isSubmitting: false,
-			showModal: false,
-			success: false,
-			message: '',
-		})
+		isSubmitting: false,
+		showModal: false,
+		success: false,
+		message: '',
+	})
 	}
 
 	const renderCurrentStep = () => {
@@ -53,11 +53,11 @@ export default function RegisterPage() {
 			case 'intro':
 				return <IntroStep selectedType={selectedType} />
 			case 'step1':
-				return <Step1 formData={formData} errors={errors} updateFormData={updateFormData} />
+				return <Step1 formData={formData} errors={errors} updateFormData={updateFormData} onNext={handleNext} />
 			case 'step2':
-				return <Step2 formData={formData} errors={errors} updateFormData={updateFormData} />
+				return <Step2 formData={formData} errors={errors} updateFormData={updateFormData} onNext={handleNext} />
 			case 'step3':
-				return <Step3 formData={formData} errors={errors} updateFormData={updateFormData} />
+				return <Step3 formData={formData} errors={errors} updateFormData={updateFormData} onSubmit={handleSubmit} />
 			default:
 				return null
 		}

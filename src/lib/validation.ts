@@ -28,12 +28,11 @@ export function validateStep2(formData: FormData): Partial<FormData> {
 	const errors: Partial<FormData> = {}
 	
 	if (!formData.ahpraNumber.trim()) errors.ahpraNumber = 'AHPRA number is required'
-	if (!formData.ahpraRegistrationDate) errors.ahpraRegistrationDate = 'Registration date is required'
-	if (!formData.practiceName.trim()) errors.practiceName = 'Practice name is required'
-	if (!formData.practiceAddress.trim()) errors.practiceAddress = 'Practice address is required'
-	if (!formData.city.trim()) errors.city = 'City is required'
-	if (!formData.state) errors.state = 'Please select a state'
-	if (!formData.postcode.trim()) errors.postcode = 'Postcode is required'
+	if (!formData.ahpraRegistrationDate.trim()) {
+		errors.ahpraRegistrationDate = 'Registration year is required'
+	} else if (!/^\d{4}$/.test(formData.ahpraRegistrationDate)) {
+		errors.ahpraRegistrationDate = 'Please enter a valid year (e.g., 2015)'
+	}
 	
 	return errors
 }
@@ -41,7 +40,7 @@ export function validateStep2(formData: FormData): Partial<FormData> {
 export function validateStep3(formData: FormData): Partial<FormData> {
 	const errors: Partial<FormData> = {}
 	
-	if (!formData.yearsExperience) errors.yearsExperience = 'Please select years of experience'
+	if (!formData.experience) errors.experience = 'Please select years of experience'
 	
 	return errors
 } 

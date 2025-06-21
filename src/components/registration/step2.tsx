@@ -6,9 +6,17 @@ interface Step2Props {
 	formData: FormData
 	errors: Partial<FormData>
 	updateFormData: (field: keyof FormData, value: string) => void
+	onNext: () => void
 }
 
-export function Step2({ formData, errors, updateFormData }: Step2Props) {
+export function Step2({ formData, errors, updateFormData, onNext }: Step2Props) {
+	const handleKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === 'Enter' && !e.shiftKey) {
+			e.preventDefault()
+			onNext()
+		}
+	}
+
 	return (
 		<div className="flex-1 flex items-start justify-center px-6 pt-12 pb-6">
 			<div className="max-w-2xl mx-auto w-full text-center">
@@ -30,18 +38,20 @@ export function Step2({ formData, errors, updateFormData }: Step2Props) {
 							placeholder="Enter your AHPRA registration number"
 							value={formData.ahpraNumber}
 							onChange={(value) => updateFormData('ahpraNumber', value)}
+							onKeyDown={handleKeyDown}
 							error={errors.ahpraNumber}
 							required
 						/>
 						
 						<FormField
-							label="AHPRA Registration Date"
+							label="AHPRA Registration Year"
 							name="ahpraRegistrationDate"
-							type="date"
+							placeholder="e.g. 2015"
 							value={formData.ahpraRegistrationDate}
 							onChange={(value) => updateFormData('ahpraRegistrationDate', value)}
+							onKeyDown={handleKeyDown}
 							error={errors.ahpraRegistrationDate}
-							helperText="When did you first register with AHPRA as a medical practitioner?"
+							helperText="What year did you first register with AHPRA as a medical practitioner?"
 						/>
 						
 						<FormField
@@ -50,16 +60,8 @@ export function Step2({ formData, errors, updateFormData }: Step2Props) {
 							placeholder="Enter your practice name"
 							value={formData.practiceName}
 							onChange={(value) => updateFormData('practiceName', value)}
+							onKeyDown={handleKeyDown}
 							error={errors.practiceName}
-						/>
-						
-						<FormField
-							label="Practice Address"
-							name="practiceAddress"
-							placeholder="Enter your practice address"
-							value={formData.practiceAddress}
-							onChange={(value) => updateFormData('practiceAddress', value)}
-							error={errors.practiceAddress}
 						/>
 						
 						<div className="grid grid-cols-2 gap-4">
@@ -69,6 +71,7 @@ export function Step2({ formData, errors, updateFormData }: Step2Props) {
 								placeholder="Enter city"
 								value={formData.city}
 								onChange={(value) => updateFormData('city', value)}
+								onKeyDown={handleKeyDown}
 								error={errors.city}
 							/>
 							<FormField
@@ -78,6 +81,7 @@ export function Step2({ formData, errors, updateFormData }: Step2Props) {
 								placeholder="Select state"
 								value={formData.state}
 								onChange={(value) => updateFormData('state', value)}
+								onKeyDown={handleKeyDown}
 								error={errors.state}
 								options={AUSTRALIAN_STATES}
 							/>
@@ -89,6 +93,7 @@ export function Step2({ formData, errors, updateFormData }: Step2Props) {
 							placeholder="Enter postcode"
 							value={formData.postcode}
 							onChange={(value) => updateFormData('postcode', value)}
+							onKeyDown={handleKeyDown}
 							error={errors.postcode}
 						/>
 					</div>

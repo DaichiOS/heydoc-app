@@ -6,9 +6,17 @@ interface Step1Props {
 	formData: FormData
 	errors: Partial<FormData>
 	updateFormData: (field: keyof FormData, value: string) => void
+	onNext: () => void
 }
 
-export function Step1({ formData, errors, updateFormData }: Step1Props) {
+export function Step1({ formData, errors, updateFormData, onNext }: Step1Props) {
+	const handleKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === 'Enter' && !e.shiftKey) {
+			e.preventDefault()
+			onNext()
+		}
+	}
+
 	return (
 		<div className="flex-1 flex items-start justify-center px-6 pt-12 pb-6">
 			<div className="max-w-2xl mx-auto w-full text-center">
@@ -31,6 +39,7 @@ export function Step1({ formData, errors, updateFormData }: Step1Props) {
 								placeholder="Enter your first name"
 								value={formData.firstName}
 								onChange={(value) => updateFormData('firstName', value)}
+								onKeyDown={handleKeyDown}
 								error={errors.firstName}
 								required
 							/>
@@ -40,6 +49,7 @@ export function Step1({ formData, errors, updateFormData }: Step1Props) {
 								placeholder="Enter your last name"
 								value={formData.lastName}
 								onChange={(value) => updateFormData('lastName', value)}
+								onKeyDown={handleKeyDown}
 								error={errors.lastName}
 								required
 							/>
@@ -52,6 +62,7 @@ export function Step1({ formData, errors, updateFormData }: Step1Props) {
 							placeholder="Enter your email address"
 							value={formData.email}
 							onChange={(value) => updateFormData('email', value)}
+							onKeyDown={handleKeyDown}
 							error={errors.email}
 							required
 						/>
@@ -63,6 +74,7 @@ export function Step1({ formData, errors, updateFormData }: Step1Props) {
 							placeholder="Enter your phone number"
 							value={formData.phone}
 							onChange={(value) => updateFormData('phone', value)}
+							onKeyDown={handleKeyDown}
 							error={errors.phone}
 							required
 						/>
@@ -74,6 +86,7 @@ export function Step1({ formData, errors, updateFormData }: Step1Props) {
 							placeholder="Select your specialty"
 							value={formData.specialty}
 							onChange={(value) => updateFormData('specialty', value)}
+							onKeyDown={handleKeyDown}
 							error={errors.specialty}
 							options={MEDICAL_SPECIALTIES}
 							required
@@ -88,6 +101,7 @@ export function Step1({ formData, errors, updateFormData }: Step1Props) {
 									placeholder="Create a secure password"
 									value={formData.password}
 									onChange={(value) => updateFormData('password', value)}
+									onKeyDown={handleKeyDown}
 									error={errors.password}
 									required
 								/>
@@ -99,6 +113,7 @@ export function Step1({ formData, errors, updateFormData }: Step1Props) {
 									placeholder="Confirm your password"
 									value={formData.confirmPassword}
 									onChange={(value) => updateFormData('confirmPassword', value)}
+									onKeyDown={handleKeyDown}
 									error={errors.confirmPassword}
 									required
 								/>
