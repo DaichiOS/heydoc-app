@@ -1,12 +1,13 @@
+import { eq } from 'drizzle-orm'
 import type {
-    AuthUser,
-    CognitoAuthResult,
-    CognitoSignUpData,
-    User,
-    UserRole
+	AuthUser,
+	CognitoAuthResult,
+	CognitoSignUpData,
+	User,
+	UserRole
 } from '../../types'
 import { cognitoService } from '../aws/cognito'
-import { db } from '../db'
+import { db, users } from '../db'
 
 export class AuthService {
 	/**
@@ -29,8 +30,8 @@ export class AuthService {
 			return {
 				id: user.id,
 				email: user.email,
-				role: user.role,
-				status: user.status,
+				role: user.role as UserRole,
+				status: user.status as 'active' | 'inactive' | 'pending',
 				accessToken: cognitoResult.accessToken,
 				refreshToken: cognitoResult.refreshToken,
 			}
@@ -76,11 +77,8 @@ export class AuthService {
 	 */
 	async getUserByEmail(email: string): Promise<User | null> {
 		try {
-			const result = await db.query<User>(
-				'SELECT * FROM users WHERE email = $1',
-				[email]
-			)
-			return result.rows[0] || null
+			const result = await db.select().from(users).where(eq(users.email, email))
+			return result[0] as User || null
 		} catch (error: any) {
 			console.error('Get user by email error:', error)
 			return null
@@ -92,11 +90,8 @@ export class AuthService {
 	 */
 	async getUserByCognitoId(cognitoUserId: string): Promise<User | null> {
 		try {
-			const result = await db.query<User>(
-				'SELECT * FROM users WHERE cognito_user_id = $1',
-				[cognitoUserId]
-			)
-			return result.rows[0] || null
+			const result = await db.select().from(users).where(eq(users.cognitoUserId, cognitoUserId))
+			return result[0] as User || null
 		} catch (error: any) {
 			console.error('Get user by Cognito ID error:', error)
 			return null
@@ -108,10 +103,12 @@ export class AuthService {
 	 */
 	async updateUserStatus(userId: string, status: 'active' | 'inactive' | 'pending'): Promise<boolean> {
 		try {
-			await db.query(
-				'UPDATE users SET status = $1, updated_at = NOW() WHERE id = $2',
-				[status, userId]
-			)
+			await db.update(users)
+				.set({ 
+					status, 
+					updatedAt: new Date() 
+				})
+				.where(eq(users.id, userId))
 			return true
 		} catch (error: any) {
 			console.error('Update user status error:', error)
@@ -124,11 +121,11 @@ export class AuthService {
 	 */
 	async getUsersByRole(role: UserRole): Promise<User[]> {
 		try {
-			const result = await db.query<User>(
-				'SELECT * FROM users WHERE role = $1 ORDER BY created_at DESC',
-				[role]
-			)
-			return result.rows
+			const result = await db.select()
+				.from(users)
+				.where(eq(users.role, role))
+				.orderBy(users.createdAt)
+			return result as User[]
 		} catch (error: any) {
 			console.error('Get users by role error:', error)
 			return []
@@ -223,17 +220,24 @@ export class AuthService {
 		status: 'active' | 'inactive' | 'pending'
 	}): Promise<User | null> {
 		try {
-			const result = await db.query<User>(
-				`INSERT INTO users (cognito_user_id, email, role, status) 
-				 VALUES ($1, $2, $3, $4) 
-				 ON CONFLICT (email) DO UPDATE SET 
-				 	cognito_user_id = EXCLUDED.cognito_user_id,
-				 	role = EXCLUDED.role,
-				 	updated_at = NOW()
-				 RETURNING *`,
-				[userData.cognitoUserId, userData.email, userData.role, userData.status]
-			)
-			return result.rows[0] || null
+			const result = await db.insert(users)
+				.values({
+					cognitoUserId: userData.cognitoUserId,
+					email: userData.email,
+					role: userData.role,
+					status: userData.status,
+				})
+				.onConflictDoUpdate({
+					target: users.email,
+					set: {
+						cognitoUserId: userData.cognitoUserId,
+						role: userData.role,
+						updatedAt: new Date(),
+					}
+				})
+				.returning()
+			
+			return result[0] as User || null
 		} catch (error: any) {
 			console.error('Create database user error:', error)
 			return null
