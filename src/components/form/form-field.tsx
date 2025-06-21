@@ -27,7 +27,7 @@ export function FormField({
 	rows = 4,
 	helperText,
 }: FormFieldProps) {
-	const baseClasses = `w-full px-4 py-3.5 border rounded-xl bg-white transition-all duration-200 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-200/50 focus:border-blue-300 focus:shadow-md ${
+	const baseClasses = `w-full px-4 py-3.5 border rounded-xl bg-white transition-all duration-200 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-200/50 focus:border-blue-300 focus:shadow-md autofill:bg-white autofill:shadow-[inset_0_0_0px_1000px_white] ${
 		error ? 'border-red-400 bg-red-50' : 'border-slate-200 hover:border-blue-300/60 hover:shadow-sm'
 	}`
 
