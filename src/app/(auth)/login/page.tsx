@@ -50,7 +50,7 @@ export default function LoginPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-background flex items-center justify-center p-4">
+		<div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white flex items-center justify-center p-4" style={{ background: 'linear-gradient(to bottom right, #dbeafe, #eff6ff, #ffffff)' }}>
 			<div className="w-full max-w-md">
 				{/* Logo */}
 				<div className="text-center mb-8">
