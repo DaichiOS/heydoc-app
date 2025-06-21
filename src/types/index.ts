@@ -205,4 +205,33 @@ export interface DatabaseConfig {
 	username: string
 	password: string
 	ssl: boolean
+}
+
+export type RegistrationStep = 'selection' | 'intro' | 'step1' | 'step2' | 'step3'
+export type UserType = 'doctor' | 'patient' | null
+
+export interface FormData {
+	firstName: string
+	lastName: string
+	email: string
+	phone: string
+	specialty: string
+	password: string
+	confirmPassword: string
+	ahpraNumber: string
+	ahpraRegistrationDate: string
+	practiceName: string
+	practiceAddress: string
+	city: string
+	state: string
+	postcode: string
+	yearsExperience: string
+	practiceDescription: string
+}
+
+export interface SubmissionState {
+	isSubmitting: boolean
+	showModal: boolean
+	success: boolean
+	message: string
 } 

@@ -121,11 +121,11 @@ export default function LoginPage() {
 						</button>
 					</form>
 
-					<div className="mt-6 text-center">
+					<div className="mt-6 text-center space-y-3">
 						<p className="text-sm text-muted-foreground">
 							Don&apos;t have an account?{' '}
-							<a href="/signup" className="text-primary hover:underline font-medium">
-								Contact support
+							<a href="/register" className="text-primary hover:underline font-medium">
+								Sign up
 							</a>
 						</p>
 					</div>
