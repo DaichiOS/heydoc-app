@@ -11,17 +11,19 @@ export default function HomePage() {
 	const router = useRouter()
 	const [isAuthenticated, setIsAuthenticated] = useState(false)
 	const [isLoading, setIsLoading] = useState(true)
+	const [userData, setUserData] = useState<{ email: string; role: 'admin' | 'doctor' | 'patient'; firstName?: string; lastName?: string } | null>(null)
 
 	useEffect(() => {
 		// Check if user is already authenticated
 		const authData = localStorage.getItem('heydoc_auth')
 		if (authData) {
 			try {
-				const userData = JSON.parse(authData)
+				const parsedUserData = JSON.parse(authData)
 				
 				// Validate that the auth data has required fields
-				if (userData.email && userData.role) {
+				if (parsedUserData.email && parsedUserData.role) {
 					setIsAuthenticated(true)
+					setUserData(parsedUserData)
 				} else {
 					throw new Error('Invalid auth data')
 				}
@@ -30,9 +32,11 @@ export default function HomePage() {
 				// Invalid auth data, clear it
 				localStorage.removeItem('heydoc_auth')
 				setIsAuthenticated(false)
+				setUserData(null)
 			}
 		} else {
 			setIsAuthenticated(false)
+			setUserData(null)
 		}
 		
 		setIsLoading(false)
@@ -90,10 +94,14 @@ export default function HomePage() {
 					<div className="flex flex-col sm:flex-row gap-4 justify-center">
 						{isAuthenticated ? (
 							<Link
-								href="/doctor/profile"
+								href={
+									userData?.role === 'admin' ? '/admin/dashboard' :
+									userData?.role === 'doctor' ? '/doctor/profile' :
+									'/patient/dashboard'
+								}
 								className="inline-flex items-center justify-center px-8 py-4 bg-[#1C1B3A] hover:bg-[#252347] text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
 							>
-								Go to Profile
+								{userData?.role === 'admin' ? 'Go to Dashboard' : 'Go to Profile'}
 								<ArrowRight className="ml-2 w-5 h-5" />
 							</Link>
 						) : (

@@ -211,13 +211,13 @@ export async function POST(request: NextRequest) {
 		const userId = uuidv4()
 		
 		try {
-			await db.insert(users).values({
-				id: userId,
-				cognitoUserId: cognitoUserId,
-				email,
-				role: 'doctor',
-				status: 'pending', // Doctors start as pending until approved
-			})
+		await db.insert(users).values({
+			id: userId,
+			cognitoUserId: cognitoUserId,
+			email,
+			role: 'doctor',
+			status: 'pending', // Doctors start as pending until approved
+		})
 			console.log('✅ Database user created successfully:', userId)
 		} catch (dbError: any) {
 			console.error('❌ Database user creation failed:', {
@@ -241,18 +241,18 @@ export async function POST(request: NextRequest) {
 			const registrationDate = new Date(`${ahpraRegistrationDate}-01-01`).toISOString().split('T')[0]
 			
 			const doctorData = await db.insert(doctors).values({
-				id: uuidv4(),
-				userId,
-				firstName,
-				lastName,
-				phone,
-				addressCity: city,
-				addressState: state,
-				addressPostcode: postcode,
-				medicalSpecialty: specialty,
-				ahpraNumber,
+			id: uuidv4(),
+			userId,
+			firstName,
+			lastName,
+			phone,
+			addressCity: city,
+			addressState: state,
+			addressPostcode: postcode,
+			medicalSpecialty: specialty,
+			ahpraNumber,
 				ahpraRegistrationDate: registrationDate,
-				yearsExperience: parseInt(experience.split('-')[0]) || 0,
+			yearsExperience: parseInt(experience.split('-')[0]) || 0,
 			}).returning({ id: doctors.id })
 
 			if (doctorData.length === 0) {

@@ -6,6 +6,13 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
+interface UserData {
+	email: string
+	role: 'admin' | 'doctor' | 'patient'
+	firstName?: string
+	lastName?: string
+}
+
 interface AppHeaderProps {
 	showQuestions?: boolean
 	showExit?: boolean
@@ -22,6 +29,7 @@ export function AppHeader({
 	const [isAuthenticated, setIsAuthenticated] = useState(false)
 	const [userDisplayName, setUserDisplayName] = useState('')
 	const [showUserMenu, setShowUserMenu] = useState(false)
+	const [userData, setUserData] = useState<UserData | null>(null)
 	const router = useRouter()
 
 	useEffect(() => {
@@ -29,8 +37,11 @@ export function AppHeader({
 		const authData = localStorage.getItem('heydoc_auth')
 		if (authData) {
 			try {
-				const userData = JSON.parse(authData)
+				const userData = JSON.parse(authData) as UserData
 				setIsAuthenticated(true)
+				
+				// Store user data for routing
+				setUserData(userData)
 				
 				// Create display name - prefer "Dr [LastName]" for doctors
 				if (userData.role === 'doctor' && userData.firstName && userData.lastName) {
@@ -44,10 +55,12 @@ export function AppHeader({
 			} catch (error) {
 				setIsAuthenticated(false)
 				setUserDisplayName('')
+				setUserData(null)
 			}
 		} else {
 			setIsAuthenticated(false)
 			setUserDisplayName('')
+			setUserData(null)
 		}
 	}, [])
 
@@ -126,7 +139,11 @@ export function AppHeader({
 									</div>
 									<div className="py-1">
 										<Link
-											href="/doctor/profile"
+											href={
+												userData?.role === 'admin' ? '/admin/dashboard' :
+												userData?.role === 'doctor' ? '/doctor/profile' :
+												'/patient/dashboard'
+											}
 											className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
 											onClick={() => setShowUserMenu(false)}
 										>

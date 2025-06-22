@@ -1,6 +1,6 @@
 'use client'
 
-import Image from 'next/image'
+import { AdminHeader } from '@/components/ui/admin-header'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -39,11 +39,6 @@ export default function AdminDashboard() {
 		setIsLoading(false)
 	}, [router])
 
-	const handleLogout = () => {
-		localStorage.removeItem('heydoc_auth')
-		router.push('/login')
-	}
-
 	if (isLoading) {
 		return (
 			<div className="min-h-screen bg-background flex items-center justify-center">
@@ -60,38 +55,9 @@ export default function AdminDashboard() {
 	}
 
 	return (
-		<div className="min-h-screen bg-background">
-			{/* Header */}
-			<header className="bg-white border-b border-border">
-				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-					<div className="flex justify-between items-center h-16">
-						<div className="flex items-center space-x-4">
-							<Image
-								src="/logos/heydoc.png"
-								alt="HeyDoc"
-								width={120}
-								height={60}
-								className="h-8 w-auto"
-							/>
-							<span className="text-lg font-semibold text-heydoc-primary">
-								Admin Dashboard
-							</span>
-						</div>
-						
-						<div className="flex items-center space-x-4">
-							<span className="text-sm text-muted-foreground">
-								Welcome, {user.email}
-							</span>
-							<button
-								onClick={handleLogout}
-								className="px-4 py-2 text-sm font-medium text-white bg-heydoc-primary hover:bg-heydoc-primary-light rounded-lg transition-colors"
-							>
-								Logout
-							</button>
-						</div>
-					</div>
-				</div>
-			</header>
+		<div className="min-h-screen bg-slate-50">
+			{/* Use the new AdminHeader component */}
+			<AdminHeader />
 
 			{/* Main Content */}
 			<main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
