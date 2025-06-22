@@ -142,6 +142,9 @@ export async function POST(request: NextRequest) {
 		})
 
 		// Create doctor record
+		// Convert year string to proper date format (YYYY-01-01)
+		const registrationDate = new Date(`${ahpraRegistrationDate}-01-01`).toISOString().split('T')[0]
+		
 		await db.insert(doctors).values({
 			id: uuidv4(),
 			userId,
@@ -153,7 +156,7 @@ export async function POST(request: NextRequest) {
 			addressPostcode: postcode,
 			medicalSpecialty: specialty,
 			ahpraNumber,
-			ahpraRegistrationDate: ahpraRegistrationDate,
+			ahpraRegistrationDate: registrationDate,
 			yearsExperience: parseInt(experience.split('-')[0]) || 0,
 		})
 
