@@ -41,3 +41,8 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# Admin scripts (security)
+scripts/create-admin.js
+scripts/set-admin-password.js
+scripts/README.md
