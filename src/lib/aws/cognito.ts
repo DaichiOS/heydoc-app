@@ -3,12 +3,15 @@ import {
 	AdminCreateUserCommandInput,
 	AdminGetUserCommand,
 	AdminInitiateAuthCommand,
+	AdminRespondToAuthChallengeCommand,
 	AdminSetUserPasswordCommand,
 	AdminUpdateUserAttributesCommand,
 	AuthFlowType,
+	ChallengeNameType,
 	CognitoIdentityProviderClient,
 	GlobalSignOutCommand,
-	ListUsersCommand
+	ListUsersCommand,
+	ResendConfirmationCodeCommand
 } from '@aws-sdk/client-cognito-identity-provider'
 import type {
 	CognitoAuthResult,
@@ -72,6 +75,11 @@ export class CognitoService {
 						Value: userData.lastName,
 					}] : []),
 				],
+				// Configure the email template with proper verification link
+				ClientMetadata: {
+					verification_url: `${process.env.NEXT_PUBLIC_APP_URL}/verify-email`,
+				},
+				// Remove MessageAction: 'SUPPRESS' to allow invitation emails to be sent
 			}
 
 			const result = await this.client.send(new AdminCreateUserCommand(params))
@@ -321,6 +329,193 @@ export class CognitoService {
 		} catch (error: any) {
 			console.error('Error setting user status:', error)
 			return false
+		}
+	}
+
+	/**
+	 * Resend confirmation code for email verification
+	 * For admin-created users, we need to resend the invitation
+	 */
+	async resendConfirmationCode(email: string): Promise<{ success: boolean; error?: string }> {
+		try {
+			console.log('🔍 Attempting to resend confirmation code for:', email)
+			
+			// For admin-created users, we need to check if they exist and resend invitation
+			const userInfo = await this.getUserInfo(email)
+			
+			if (!userInfo) {
+				console.error('❌ User not found in Cognito:', email)
+				return { 
+					success: false, 
+					error: 'User not found. Please ensure you have registered with this email address.' 
+				}
+			}
+
+			console.log('✅ User found with status:', userInfo.status)
+
+			// If user is in FORCE_CHANGE_PASSWORD status, resend the invitation
+			if (userInfo.status === 'FORCE_CHANGE_PASSWORD') {
+				console.log('🔄 Resending invitation for user in FORCE_CHANGE_PASSWORD status')
+				
+				// Resend invitation by creating the user again with MessageAction RESEND
+				const params: AdminCreateUserCommandInput = {
+					UserPoolId: this.userPoolId,
+					Username: email,
+					MessageAction: 'RESEND', // This will resend the invitation email
+					ClientMetadata: {
+						verification_url: `${process.env.NEXT_PUBLIC_APP_URL}/verify-email`,
+					},
+				}
+
+				await this.client.send(new AdminCreateUserCommand(params))
+				console.log('✅ Invitation email resent successfully')
+				return { success: true }
+			} else {
+				console.log('🔄 Using regular resend confirmation code for status:', userInfo.status)
+				
+				// For other statuses, use the regular resend confirmation code
+				const params = {
+					ClientId: this.clientId,
+					Username: email,
+					SecretHash: this.calculateSecretHash(email),
+					ClientMetadata: {
+						verification_url: `${process.env.NEXT_PUBLIC_APP_URL}/verify-email`,
+					},
+				}
+
+				await this.client.send(new ResendConfirmationCodeCommand(params))
+				console.log('✅ Confirmation code resent successfully')
+				return { success: true }
+			}
+		} catch (error: any) {
+			console.error('❌ Error resending confirmation code:', {
+				error: error.message,
+				code: error.code,
+				name: error.name,
+				type: error.__type,
+				statusCode: error.$metadata?.httpStatusCode,
+			})
+			
+			// Provide more specific error messages
+			let errorMessage = 'Failed to resend confirmation code'
+			
+			if (error.name === 'UserNotFoundException' || error.__type === 'UserNotFoundException') {
+				errorMessage = 'User not found. Please ensure you have registered with this email address.'
+			} else if (error.name === 'InvalidParameterException') {
+				errorMessage = 'Invalid email address format.'
+			} else if (error.name === 'LimitExceededException') {
+				errorMessage = 'Too many requests. Please wait a few minutes before trying again.'
+			} else if (error.message) {
+				errorMessage = error.message
+			}
+			
+			return { 
+				success: false, 
+				error: errorMessage
+			}
+		}
+	}
+
+	/**
+	 * Verify temporary password (handles NEW_PASSWORD_REQUIRED challenge)
+	 */
+	async verifyTemporaryPassword(email: string, temporaryPassword: string): Promise<{ success: boolean; session?: string; error?: string }> {
+		try {
+			const params = {
+				UserPoolId: this.userPoolId,
+				ClientId: this.clientId,
+				AuthFlow: AuthFlowType.ADMIN_NO_SRP_AUTH,
+				AuthParameters: {
+					USERNAME: email,
+					PASSWORD: temporaryPassword,
+					SECRET_HASH: this.calculateSecretHash(email),
+				},
+			}
+
+			const result = await this.client.send(new AdminInitiateAuthCommand(params))
+
+			// If authentication is successful without challenge, return success
+			if (result.AuthenticationResult) {
+				return { success: true }
+			}
+
+			// If NEW_PASSWORD_REQUIRED challenge, return success with session
+			if (result.ChallengeName === ChallengeNameType.NEW_PASSWORD_REQUIRED) {
+				return { 
+					success: true, 
+					session: result.Session 
+				}
+			}
+
+			return { success: false, error: 'Invalid temporary password' }
+		} catch (error: any) {
+			console.error('Error verifying temporary password:', error)
+			
+			// Handle specific Cognito errors
+			if (error.name === 'NotAuthorizedException') {
+				return { success: false, error: 'Invalid email or temporary password' }
+			}
+			if (error.name === 'UserNotFoundException') {
+				return { success: false, error: 'User not found' }
+			}
+			if (error.name === 'PasswordResetRequiredException') {
+				return { success: false, error: 'Password reset required' }
+			}
+			
+			return { success: false, error: error.message || 'Failed to verify temporary password' }
+		}
+	}
+
+	/**
+	 * Set permanent password after temporary password verification
+	 */
+	async setPermanentPassword(email: string, temporaryPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
+		try {
+			// First verify the temporary password and get session
+			const verifyResult = await this.verifyTemporaryPassword(email, temporaryPassword)
+			
+			if (!verifyResult.success) {
+				return { success: false, error: verifyResult.error }
+			}
+
+			// If we have a session (NEW_PASSWORD_REQUIRED challenge), respond to it
+			if (verifyResult.session) {
+				const challengeParams = {
+					UserPoolId: this.userPoolId,
+					ClientId: this.clientId,
+					ChallengeName: ChallengeNameType.NEW_PASSWORD_REQUIRED,
+					Session: verifyResult.session,
+					ChallengeResponses: {
+						USERNAME: email,
+						NEW_PASSWORD: newPassword,
+						SECRET_HASH: this.calculateSecretHash(email),
+					},
+				}
+
+				const challengeResult = await this.client.send(new AdminRespondToAuthChallengeCommand(challengeParams))
+				
+				if (challengeResult.AuthenticationResult) {
+					return { success: true }
+				}
+			} else {
+				// If no session, use the direct password set method
+				const success = await this.setUserPermanentPassword(email, newPassword)
+				return { success, error: success ? undefined : 'Failed to set permanent password' }
+			}
+
+			return { success: false, error: 'Failed to set permanent password' }
+		} catch (error: any) {
+			console.error('Error setting permanent password:', error)
+			
+			// Handle specific Cognito errors
+			if (error.name === 'InvalidPasswordException') {
+				return { success: false, error: 'Password does not meet requirements' }
+			}
+			if (error.name === 'NotAuthorizedException') {
+				return { success: false, error: 'Invalid temporary password' }
+			}
+			
+			return { success: false, error: error.message || 'Failed to set permanent password' }
 		}
 	}
 }

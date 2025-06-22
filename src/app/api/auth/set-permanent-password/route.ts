@@ -30,55 +30,25 @@ export async function POST(request: NextRequest) {
 			)
 		}
 
-		// First, verify the temporary password by attempting to sign in
-		try {
-			await cognitoService.signIn(email, temporaryPassword)
-		} catch (error: any) {
-			console.error('Temporary password verification failed:', error)
+		// Use the new method to set permanent password
+		const result = await cognitoService.setPermanentPassword(email, temporaryPassword, newPassword)
+
+		if (result.success) {
+			return NextResponse.json({
+				success: true,
+				message: 'Password set successfully',
+			})
+		} else {
 			return NextResponse.json(
-				{ error: 'Invalid temporary password' },
-				{ status: 401 }
+				{ error: result.error || 'Failed to set password' },
+				{ status: 400 }
 			)
 		}
 
-		// Set the permanent password in Cognito
-		const success = await cognitoService.setUserPermanentPassword(email, newPassword)
-		
-		if (!success) {
-			return NextResponse.json(
-				{ error: 'Failed to set password' },
-				{ status: 500 }
-			)
-		}
-
-		// Mark email as verified
-		const emailVerified = await cognitoService.updateUserAttributes(email, {
-			'email_verified': 'true'
-		})
-
-		if (!emailVerified) {
-			console.warn('Failed to mark email as verified for:', email)
-		}
-
-		return NextResponse.json({ 
-			success: true,
-			message: 'Password set successfully. You can now log in with your new password.' 
-		})
-
-	} catch (error: any) {
+	} catch (error) {
 		console.error('Set permanent password error:', error)
-		
-		let errorMessage = 'Failed to set password'
-		if (error.message?.includes('not found')) {
-			errorMessage = 'User account not found. Please register first.'
-		} else if (error.message?.includes('Password did not conform')) {
-			errorMessage = 'Password does not meet security requirements'
-		} else if (error.message?.includes('NotAuthorizedException')) {
-			errorMessage = 'Invalid temporary password'
-		}
-
 		return NextResponse.json(
-			{ error: errorMessage },
+			{ error: 'Internal server error' },
 			{ status: 500 }
 		)
 	}

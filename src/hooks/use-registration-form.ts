@@ -107,15 +107,23 @@ export function useRegistrationForm() {
 			if (response.ok) {
 				const data = await response.json()
 				
-				// For email verification flow, show success message and redirect
+				// For email verification flow, store email and redirect immediately
 				if (data.requiresEmailVerification && data.email) {
+					// Store email in localStorage for the profile page
+					if (typeof window !== 'undefined') {
+						localStorage.setItem('registrationEmail', data.email)
+					}
+					
+					// Hide modal and redirect immediately without showing intermediate success state
 					setSubmission({
 						isSubmitting: false,
-						showModal: true,
+						showModal: false,
 						success: true,
-						message: data.message || 'Registration successful! Please check your email to verify your account and set your password.',
-						redirectUrl: `/verify-email-sent?email=${encodeURIComponent(data.email)}`
+						message: '',
 					})
+					
+					// Redirect immediately without delay
+					window.location.href = `/verify-email?email=${encodeURIComponent(data.email)}`
 				} else {
 					setSubmission({
 						isSubmitting: false,
