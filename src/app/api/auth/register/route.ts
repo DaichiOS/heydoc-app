@@ -25,7 +25,6 @@ export async function POST(request: NextRequest) {
 			email,
 			phone,
 			specialty,
-			password,
 			ahpraNumber,
 			ahpraRegistrationDate,
 			practiceName,
@@ -54,7 +53,6 @@ export async function POST(request: NextRequest) {
 			email,
 			phone,
 			specialty,
-			password,
 			ahpraNumber,
 			ahpraRegistrationDate,
 			practiceName,
@@ -98,7 +96,6 @@ export async function POST(request: NextRequest) {
 		try {
 			const cognitoResponse = await cognitoService.createUser({
 				email,
-				password,
 				firstName,
 				lastName,
 				role: 'doctor',
@@ -117,8 +114,8 @@ export async function POST(request: NextRequest) {
 			if (cognitoError.message) {
 				if (cognitoError.message.includes('Password did not conform')) {
 					errorMessage = 'Password does not meet requirements. Please ensure it has uppercase, lowercase, and numeric characters.'
-				} else if (cognitoError.message.includes('already exists')) {
-					errorMessage = 'An account with this email already exists.'
+				} else if (cognitoError.message.includes('already exists') || cognitoError.__type === 'UsernameExistsException') {
+					errorMessage = 'An account with this email already exists. If you already have an account, please try logging in instead.'
 				} else {
 					errorMessage = cognitoError.message
 				}
@@ -126,7 +123,7 @@ export async function POST(request: NextRequest) {
 			
 			return NextResponse.json(
 				{ error: errorMessage },
-				{ status: 400 }
+				{ status: 409 } // Use 409 Conflict for existing users
 			)
 		}
 
@@ -145,7 +142,7 @@ export async function POST(request: NextRequest) {
 		// Convert year string to proper date format (YYYY-01-01)
 		const registrationDate = new Date(`${ahpraRegistrationDate}-01-01`).toISOString().split('T')[0]
 		
-		await db.insert(doctors).values({
+		const doctorData = await db.insert(doctors).values({
 			id: uuidv4(),
 			userId,
 			firstName,
@@ -158,17 +155,44 @@ export async function POST(request: NextRequest) {
 			ahpraNumber,
 			ahpraRegistrationDate: registrationDate,
 			yearsExperience: parseInt(experience.split('-')[0]) || 0,
+		}).returning({ id: doctors.id })
+
+		if (doctorData.length === 0) {
+			// Rollback: delete the Cognito user if database insert fails
+			try {
+				// Note: You might want to implement a delete user method in CognitoService
+				console.error('Database insert failed, but Cognito user created. Manual cleanup may be needed.')
+			} catch (cleanupError) {
+				console.error('Failed to cleanup Cognito user after database error:', cleanupError)
+			}
+			
+			return NextResponse.json(
+				{ error: 'Failed to save user data' },
+				{ status: 500 }
+			)
+		}
+
+		// TODO: Send custom verification email with link to /verify-email?email=user@example.com
+		// For now, user will need to navigate to the verification link manually
+		
+		console.log('Doctor registration successful:', {
+			email,
+			cognitoUserId,
+			databaseUserId: userId,
+			doctorId: doctorData[0].id
 		})
 
 		return NextResponse.json({
-			message: 'Registration submitted successfully! We will review your application and be in touch soon.',
-			userId,
+			success: true,
+			message: 'Registration successful! Please check your email to verify your account and set your password.',
+			requiresEmailVerification: true,
+			email: email
 		})
 
 	} catch (error) {
 		console.error('Registration error:', error)
 		return NextResponse.json(
-			{ error: 'Internal server error' },
+			{ error: 'Registration failed. Please try again.' },
 			{ status: 500 }
 		)
 	}

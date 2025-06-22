@@ -10,17 +10,6 @@ export function validateStep1(formData: FormData): Partial<FormData> {
 	if (!formData.phone.trim()) errors.phone = 'Phone number is required'
 	if (!formData.specialty) errors.specialty = 'Please select your specialty'
 	
-	if (!formData.password.trim()) errors.password = 'Password is required'
-	else if (formData.password.length < 8) errors.password = 'Password must be at least 8 characters'
-	else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-		errors.password = 'Password must contain uppercase, lowercase, and number'
-	}
-	
-	if (!formData.confirmPassword.trim()) errors.confirmPassword = 'Please confirm your password'
-	else if (formData.password !== formData.confirmPassword) {
-		errors.confirmPassword = 'Passwords do not match'
-	}
-	
 	return errors
 }
 

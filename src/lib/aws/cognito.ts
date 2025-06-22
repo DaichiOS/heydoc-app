@@ -1,21 +1,20 @@
 import {
-    AdminCreateUserCommand,
-    AdminCreateUserCommandInput,
-    AdminGetUserCommand,
-    AdminInitiateAuthCommand,
-    AdminSetUserPasswordCommand,
-    AdminUpdateUserAttributesCommand,
-    AuthFlowType,
-    CognitoIdentityProviderClient,
-    GlobalSignOutCommand,
-    ListUsersCommand,
-    MessageActionType
+	AdminCreateUserCommand,
+	AdminCreateUserCommandInput,
+	AdminGetUserCommand,
+	AdminInitiateAuthCommand,
+	AdminSetUserPasswordCommand,
+	AdminUpdateUserAttributesCommand,
+	AuthFlowType,
+	CognitoIdentityProviderClient,
+	GlobalSignOutCommand,
+	ListUsersCommand
 } from '@aws-sdk/client-cognito-identity-provider'
 import type {
-    CognitoAuthResult,
-    CognitoSignUpData,
-    CognitoUser,
-    UserRole
+	CognitoAuthResult,
+	CognitoSignUpData,
+	CognitoUser,
+	UserRole
 } from '../../types'
 import { config } from '../config'
 
@@ -44,11 +43,13 @@ export class CognitoService {
 	 */
 	async createUser(userData: CognitoSignUpData): Promise<{ success: boolean; userId?: string; error?: string }> {
 		try {
+			// Use provided password or generate a random temporary password
+			const tempPassword = userData.password || this.generateTempPassword()
+			
 			const params: AdminCreateUserCommandInput = {
 				UserPoolId: this.userPoolId,
 				Username: userData.email,
-				TemporaryPassword: userData.password,
-				MessageAction: MessageActionType.SUPPRESS, // We'll send custom emails
+				TemporaryPassword: tempPassword,
 				UserAttributes: [
 					{
 						Name: 'email',
@@ -56,7 +57,7 @@ export class CognitoService {
 					},
 					{
 						Name: 'email_verified',
-						Value: 'true',
+						Value: 'false', // Require email verification
 					},
 					{
 						Name: 'custom:role',
@@ -76,14 +77,7 @@ export class CognitoService {
 			const result = await this.client.send(new AdminCreateUserCommand(params))
 			
 			if (result.User?.Username) {
-				// Set permanent password
-				await this.client.send(new AdminSetUserPasswordCommand({
-					UserPoolId: this.userPoolId,
-					Username: userData.email,
-					Password: userData.password,
-					Permanent: true,
-				}))
-
+				// Don't set permanent password - user will set it during email verification
 				return { 
 					success: true, 
 					userId: result.User.Username 
@@ -98,6 +92,29 @@ export class CognitoService {
 				error: error.message || 'Failed to create user' 
 			}
 		}
+	}
+
+	/**
+	 * Generate a secure random temporary password
+	 */
+	private generateTempPassword(): string {
+		const length = 12
+		const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*'
+		let password = ''
+		
+		// Ensure at least one of each type
+		password += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)]
+		password += 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)]
+		password += '0123456789'[Math.floor(Math.random() * 10)]
+		password += '!@#$%^&*'[Math.floor(Math.random() * 8)]
+		
+		// Fill remaining length
+		for (let i = password.length; i < length; i++) {
+			password += charset[Math.floor(Math.random() * charset.length)]
+		}
+		
+		// Shuffle the password
+		return password.split('').sort(() => Math.random() - 0.5).join('')
 	}
 
 	/**
@@ -161,6 +178,25 @@ export class CognitoService {
 		} catch (error: any) {
 			console.error('Error getting user info:', error)
 			return null
+		}
+	}
+
+	/**
+	 * Set user's permanent password (removes temporary password requirement)
+	 */
+	async setUserPermanentPassword(email: string, password: string): Promise<boolean> {
+		try {
+			await this.client.send(new AdminSetUserPasswordCommand({
+				UserPoolId: this.userPoolId,
+				Username: email,
+				Password: password,
+				Permanent: true,
+			}))
+
+			return true
+		} catch (error: any) {
+			console.error('Error setting permanent password:', error)
+			return false
 		}
 	}
 

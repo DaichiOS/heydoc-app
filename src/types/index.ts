@@ -153,10 +153,10 @@ export interface Patient {
 // Cognito Types
 export interface CognitoSignUpData {
 	email: string
-	password: string
-	role: UserRole
+	password?: string
 	firstName?: string
 	lastName?: string
+	role: UserRole
 }
 
 export interface CognitoUser {
@@ -216,8 +216,6 @@ export interface FormData {
 	email: string
 	phone: string
 	specialty: string
-	password: string
-	confirmPassword: string
 	ahpraNumber: string
 	ahpraRegistrationDate: string
 	practiceName: string
@@ -233,4 +231,5 @@ export interface SubmissionState {
 	showModal: boolean
 	success: boolean
 	message: string
+	redirectUrl?: string
 } 

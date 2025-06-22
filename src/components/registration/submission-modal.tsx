@@ -13,7 +13,8 @@ export function SubmissionModal({ submission, onClose }: SubmissionModalProps) {
 	const handleClose = () => {
 		onClose()
 		if (submission.success) {
-			router.push('/doctor/pending')
+			const redirectTo = submission.redirectUrl || '/doctor/pending'
+			router.push(redirectTo)
 		}
 	}
 

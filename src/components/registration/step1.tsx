@@ -91,40 +91,6 @@ export function Step1({ formData, errors, updateFormData, onNext }: Step1Props) 
 							options={MEDICAL_SPECIALTIES}
 							required
 						/>
-						
-						<div className="bg-blue-100/50 rounded-xl p-5 border border-blue-200/50">
-							<div className="space-y-4">
-								<FormField
-									label="Password"
-									name="password"
-									type="password"
-									placeholder="Create a secure password"
-									value={formData.password}
-									onChange={(value) => updateFormData('password', value)}
-									onKeyDown={handleKeyDown}
-									error={errors.password}
-									required
-								/>
-								
-								<FormField
-									label="Confirm Password"
-									name="confirmPassword"
-									type="password"
-									placeholder="Confirm your password"
-									value={formData.confirmPassword}
-									onChange={(value) => updateFormData('confirmPassword', value)}
-									onKeyDown={handleKeyDown}
-									error={errors.confirmPassword}
-									required
-								/>
-								
-								<div className="bg-[#DBEAFE]/30 rounded-lg p-3 border-l-4 border-[#1C1B3A]/20">
-									<p className="text-xs text-slate-600 font-medium">
-										Password requirements: At least 8 characters with uppercase, lowercase, and number
-									</p>
-								</div>
-							</div>
-						</div>
 					</div>
 				</div>
 			</div>

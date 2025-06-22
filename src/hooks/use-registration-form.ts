@@ -10,8 +10,6 @@ const initialFormData: FormData = {
 	email: '',
 	phone: '',
 	specialty: '',
-	password: '',
-	confirmPassword: '',
 	ahpraNumber: '',
 	ahpraRegistrationDate: '',
 	practiceName: '',
@@ -103,17 +101,29 @@ export function useRegistrationForm() {
 				body: JSON.stringify({
 					type: selectedType,
 					...formData,
-					confirmPassword: undefined,
 				}),
 			})
 			
 			if (response.ok) {
-				setSubmission({
-					isSubmitting: false,
-					showModal: true,
-					success: true,
-					message: 'Registration submitted successfully! We\'ll be in touch soon.',
-				})
+				const data = await response.json()
+				
+				// For email verification flow, show success message and redirect
+				if (data.requiresEmailVerification && data.email) {
+					setSubmission({
+						isSubmitting: false,
+						showModal: true,
+						success: true,
+						message: data.message || 'Registration successful! Please check your email to verify your account and set your password.',
+						redirectUrl: `/verify-email-sent?email=${encodeURIComponent(data.email)}`
+					})
+				} else {
+					setSubmission({
+						isSubmitting: false,
+						showModal: true,
+						success: true,
+						message: data.message || 'Registration successful!',
+					})
+				}
 			} else {
 				const error = await response.json()
 				setSubmission({
