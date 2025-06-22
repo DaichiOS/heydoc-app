@@ -2,9 +2,9 @@
 
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
 	const router = useRouter()
 	const searchParams = useSearchParams()
 	const email = searchParams.get('email')
@@ -256,5 +256,38 @@ export default function VerifyEmailPage() {
 				</div>
 			</div>
 		</div>
+	)
+}
+
+function LoadingFallback() {
+	return (
+		<div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
+			<div className="w-full max-w-md">
+				<div className="text-center mb-8">
+					<Image
+						src="/logos/heydoc.png"
+						alt="HeyDoc"
+						width={150}
+						height={40}
+						className="mx-auto"
+						unoptimized
+					/>
+				</div>
+				<div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/30">
+					<div className="text-center">
+						<div className="w-8 h-8 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin mx-auto mb-4"></div>
+						<p className="text-slate-600">Loading verification page...</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	)
+}
+
+export default function VerifyEmailPage() {
+	return (
+		<Suspense fallback={<LoadingFallback />}>
+			<VerifyEmailContent />
+		</Suspense>
 	)
 } 
