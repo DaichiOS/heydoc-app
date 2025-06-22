@@ -1,76 +1,47 @@
-import { db } from '@/lib/db'
-import { users } from '@/lib/db/schema'
+import { testConnection } from '@/lib/db/connection'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
 	try {
-		// Check environment variables (without exposing sensitive values)
-		const envCheck = {
-			NODE_ENV: process.env.NODE_ENV,
-			hasAWSAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
-			awsAccessKeyLength: process.env.AWS_ACCESS_KEY_ID?.length || 0,
-			hasAWSSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
-			awsSecretKeyLength: process.env.AWS_SECRET_ACCESS_KEY?.length || 0,
-			hasCognitoUserPool: !!process.env.COGNITO_USER_POOL_ID,
-			cognitoUserPoolLength: process.env.COGNITO_USER_POOL_ID?.length || 0,
-			hasCognitoClientId: !!process.env.COGNITO_CLIENT_ID,
-			cognitoClientIdLength: process.env.COGNITO_CLIENT_ID?.length || 0,
-			hasCognitoClientSecret: !!process.env.COGNITO_CLIENT_SECRET,
-			cognitoClientSecretLength: process.env.COGNITO_CLIENT_SECRET?.length || 0,
-			hasDatabaseUrl: !!process.env.DATABASE_URL,
-			databaseUrlLength: process.env.DATABASE_URL?.length || 0,
-			awsRegion: process.env.AWS_REGION,
-		}
-
+		console.log('Health check started')
+		
+		// Test environment variables
+		const hasDbUrl = !!process.env.DATABASE_URL
+		const dbUrlPreview = process.env.DATABASE_URL 
+			? `${process.env.DATABASE_URL.substring(0, 20)}...${process.env.DATABASE_URL.slice(-20)}`
+			: 'Not set'
+		
+		console.log('DATABASE_URL exists:', hasDbUrl)
+		console.log('DATABASE_URL preview:', dbUrlPreview)
+		console.log('NODE_ENV:', process.env.NODE_ENV)
+		
 		// Test database connection
-		let dbStatus = 'unknown'
-		let dbError = null
-		try {
-			const result = await db.select().from(users).limit(1)
-			dbStatus = 'connected'
-		} catch (error: any) {
-			dbStatus = 'failed'
-			dbError = {
-				message: error.message,
-				code: error.code,
-				name: error.name
-			}
-		}
-
-		// Test Cognito (basic check)
-		let cognitoStatus = 'unknown'
-		try {
-			// Just check if we can instantiate the service
-			const { CognitoService } = await import('@/lib/aws/cognito')
-			const cognitoService = new CognitoService()
-			cognitoStatus = 'service_created'
-		} catch (error: any) {
-			cognitoStatus = 'failed'
-		}
-
-		return NextResponse.json({
+		console.log('Testing database connection...')
+		const dbConnected = await testConnection()
+		
+		const healthData = {
 			status: 'ok',
 			timestamp: new Date().toISOString(),
-			environment: envCheck,
-			services: {
-				database: {
-					status: dbStatus,
-					error: dbError
-				},
-				cognito: {
-					status: cognitoStatus
-				}
+			environment: process.env.NODE_ENV,
+			database: {
+				hasUrl: hasDbUrl,
+				urlPreview: dbUrlPreview,
+				connected: dbConnected
 			}
-		})
-
-	} catch (error: any) {
-		return NextResponse.json({
-			status: 'error',
-			timestamp: new Date().toISOString(),
-			error: {
-				message: error.message,
-				name: error.name
-			}
-		}, { status: 500 })
+		}
+		
+		console.log('Health check completed:', healthData)
+		
+		return NextResponse.json(healthData)
+	} catch (error) {
+		console.error('Health check failed:', error)
+		return NextResponse.json(
+			{ 
+				status: 'error', 
+				error: error instanceof Error ? error.message : 'Unknown error',
+				timestamp: new Date().toISOString()
+			}, 
+			{ status: 500 }
+		)
 	}
 } 
