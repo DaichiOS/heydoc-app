@@ -416,7 +416,7 @@ export default function DoctorProfilePage() {
 									</div>
 									<div className="ml-4 flex-1">
 										<h3 className="text-sm font-medium text-slate-900">Credential Review</h3>
-										<p className="text-sm text-slate-500">AHPRA registration and professional background check</p>
+										<p className="text-sm text-slate-500">Our team will review your application and give you a call!</p>
 									</div>
 									<div className={`text-sm font-medium ${
 										profile.status === 'approved' 
