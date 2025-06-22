@@ -102,14 +102,30 @@ function VerifyEmailContent() {
 				}),
 			})
 
-			const data = await response.json()
+					const data = await response.json()
 
-			if (response.ok && data.success) {
-				// Password set successfully - redirect to doctor profile with email
-				router.push(`/doctor/profile?email=${encodeURIComponent(email)}`)
+		if (response.ok && data.success) {
+			// If auto-login was successful, store auth data
+			if (data.user && data.accessToken) {
+				const authData = {
+					...data.user,
+					accessToken: data.accessToken,
+					loginTime: Date.now(),
+				}
+				localStorage.setItem('heydoc_auth', JSON.stringify(authData))
+				
+				// Redirect to doctor profile (no need for email param since we're authenticated)
+				router.push('/doctor/profile')
+			} else if (data.requiresLogin) {
+				// Password was set but auto-login failed, redirect to login with success message
+				router.push(`/login?message=${encodeURIComponent('Password set successfully! Please log in.')}&email=${encodeURIComponent(email)}`)
 			} else {
-				setError(data.error || 'Failed to set password')
+				// Fallback: redirect to profile with email
+				router.push(`/doctor/profile?email=${encodeURIComponent(email)}`)
 			}
+		} else {
+			setError(data.error || 'Failed to set password')
+		}
 		} catch (error) {
 			console.error('Password setup error:', error)
 			setError('Failed to set password. Please try again.')

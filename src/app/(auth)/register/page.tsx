@@ -2,12 +2,12 @@
 
 import { IntroStep } from '@/components/registration/intro-step'
 import { RegistrationFooter } from '@/components/registration/registration-footer'
-import { RegistrationHeader } from '@/components/registration/registration-header'
 import { SelectionStep } from '@/components/registration/selection-step'
 import { Step1 } from '@/components/registration/step1'
 import { Step2 } from '@/components/registration/step2'
 import { Step3 } from '@/components/registration/step3'
 import { SubmissionModal } from '@/components/registration/submission-modal'
+import { AppHeader } from '@/components/ui/app-header'
 import { useRegistrationForm } from '@/hooks/use-registration-form'
 
 export default function RegisterPage() {
@@ -65,7 +65,7 @@ export default function RegisterPage() {
 
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex flex-col">
-			<RegistrationHeader />
+			<AppHeader exitHref="/login" exitText="Back to login" />
 
 			{submission.showModal ? (
 				<SubmissionModal submission={submission} onClose={handleModalClose} />

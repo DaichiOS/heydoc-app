@@ -1,9 +1,9 @@
 'use client'
 
 import { AppHeader } from '@/components/ui/app-header'
-import { AlertCircle, Calendar, CheckCircle2, Clock, FileText, Mail, MapPin, Phone, Stethoscope, User, Users } from 'lucide-react'
+import { AlertCircle, Award, BookOpen, Building, Camera, CheckCircle2, Clock, Clock4, Edit3, FileText, Languages, Mail, MapPin, Phone, Settings, Shield, Stethoscope, User } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 
 interface DoctorProfile {
 	firstName: string
@@ -31,62 +31,65 @@ interface DoctorProfile {
 
 type UserStatus = 'pending_email_verification' | 'pending_review' | 'approved' | 'rejected'
 
-export default function DoctorProfilePage() {
+// Component that uses useSearchParams - wrapped in Suspense
+function DoctorProfileContent() {
 	const searchParams = useSearchParams()
 	const [profile, setProfile] = useState<DoctorProfile | null>(null)
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 	const [userEmail, setUserEmail] = useState('')
+	const [editMode, setEditMode] = useState<string | null>(null) // Track which section is being edited
 	
 	// Resend email state
 	const [isResending, setIsResending] = useState(false)
 	const [resendMessage, setResendMessage] = useState('')
 	const [resendSuccess, setResendSuccess] = useState(false)
 
-	// Get email from URL params or localStorage
-	useEffect(() => {
-		const emailFromUrl = searchParams.get('email')
-		const emailFromStorage = typeof window !== 'undefined' ? localStorage.getItem('registrationEmail') : null
-		
-		if (emailFromUrl) {
-			setUserEmail(emailFromUrl)
-		} else if (emailFromStorage) {
-			setUserEmail(emailFromStorage)
-		}
-	}, [searchParams])
-
 	// Fetch doctor profile data
 	useEffect(() => {
 		const fetchProfile = async () => {
-			if (!userEmail || userEmail === 'your-email@example.com') return
+			// Get email from auth data first (most reliable)
+			let email = ''
+			const authData = localStorage.getItem('heydoc_auth')
+			if (authData) {
+				try {
+					const userData = JSON.parse(authData)
+					email = userData.email
+				} catch (error) {
+					console.error('Error parsing auth data:', error)
+				}
+			}
+			
+			// Fallback to URL params or localStorage
+			if (!email) {
+				const emailFromUrl = searchParams.get('email')
+				const emailFromStorage = localStorage.getItem('registrationEmail')
+				email = emailFromUrl || emailFromStorage || ''
+			}
+
+			if (!email || email === 'your-email@example.com') {
+				setError('No email found. Please log in again.')
+				setLoading(false)
+				return
+			}
 
 			try {
 				setLoading(true)
 				setError(null)
 
-				// First, get the user ID from email
-				const userResponse = await fetch(`/api/auth/user-by-email?email=${encodeURIComponent(userEmail)}`)
-				if (!userResponse.ok) {
-					throw new Error('User not found')
-				}
-				
-				const userData = await userResponse.json()
-				if (!userData.success || !userData.user) {
-					throw new Error('User not found')
-				}
-
-				// Then fetch the doctor profile
-				const profileResponse = await fetch(`/api/doctor/profile?userId=${userData.user.id}`)
-				if (!profileResponse.ok) {
+				// Single optimized API call using email
+				const response = await fetch(`/api/doctor/profile?email=${encodeURIComponent(email)}`)
+				if (!response.ok) {
 					throw new Error('Profile not found')
 				}
 
-				const profileData = await profileResponse.json()
-				if (!profileData.success) {
-					throw new Error(profileData.error || 'Failed to load profile')
+				const data = await response.json()
+				if (!data.success) {
+					throw new Error(data.error || 'Failed to load profile')
 				}
 
-				setProfile(profileData.profile)
+				setProfile(data.profile)
+				setUserEmail(email) // Set email for resend functionality
 			} catch (err) {
 				console.error('Error fetching profile:', err)
 				setError(err instanceof Error ? err.message : 'Failed to load profile')
@@ -96,7 +99,7 @@ export default function DoctorProfilePage() {
 		}
 
 		fetchProfile()
-	}, [userEmail])
+	}, [searchParams]) // Remove userEmail dependency to prevent re-fetching
 
 	const handleResendEmail = async () => {
 		if (isResending || !userEmail || userEmail === 'your-email@example.com') return
@@ -146,7 +149,7 @@ export default function DoctorProfilePage() {
 					label: 'Under Review',
 					color: 'bg-blue-100 text-blue-800 border-blue-200',
 					icon: <Clock className="w-4 h-4" />,
-					description: 'Your credentials are being reviewed'
+					description: 'Our team is currently taking a look at your application'
 				}
 			case 'approved':
 				return {
@@ -174,13 +177,10 @@ export default function DoctorProfilePage() {
 
 	if (loading) {
 		return (
-			<div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-				<AppHeader showQuestions={true} showExit={true} exitHref="/" exitText="Back to Home" />
-				<div className="flex items-center justify-center min-h-[60vh]">
-					<div className="text-center">
-						<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1C1B3A] mx-auto mb-4"></div>
-						<p className="text-slate-600">Loading your profile...</p>
-					</div>
+			<div className="flex items-center justify-center min-h-[60vh]">
+				<div className="text-center">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1C1B3A] mx-auto mb-4"></div>
+					<p className="text-slate-600">Loading your profile...</p>
 				</div>
 			</div>
 		)
@@ -188,22 +188,19 @@ export default function DoctorProfilePage() {
 
 	if (error || !profile) {
 		return (
-			<div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-				<AppHeader showQuestions={true} showExit={true} exitHref="/" exitText="Back to Home" />
-				<div className="flex items-center justify-center min-h-[60vh]">
-					<div className="text-center max-w-md mx-auto px-6">
-						<AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-						<h1 className="text-2xl font-bold text-slate-900 mb-2">Profile Not Found</h1>
-						<p className="text-slate-600 mb-6">
-							{error || 'Unable to load your profile. Please try again or contact support.'}
-						</p>
-						<button
-							onClick={() => window.location.reload()}
-							className="px-6 py-3 bg-[#1C1B3A] text-white rounded-lg hover:bg-[#2A2951] transition-colors"
-						>
-							Try Again
-						</button>
-					</div>
+			<div className="flex items-center justify-center min-h-[60vh]">
+				<div className="text-center max-w-md mx-auto px-6">
+					<AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+					<h1 className="text-2xl font-bold text-slate-900 mb-2">Profile Not Found</h1>
+					<p className="text-slate-600 mb-6">
+						{error || 'Unable to load your profile. Please try again or contact support.'}
+					</p>
+					<button
+						onClick={() => window.location.reload()}
+						className="px-6 py-3 bg-[#1C1B3A] hover:bg-[#2A2951] text-white font-medium rounded-lg transition-colors"
+					>
+						Try Again
+					</button>
 				</div>
 			</div>
 		)
@@ -212,324 +209,464 @@ export default function DoctorProfilePage() {
 	const statusInfo = getStatusInfo(profile.status)
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-			<AppHeader showQuestions={true} showExit={true} exitHref="/" exitText="Back to Home" />
+		<div className="min-h-screen bg-slate-50">
+			<AppHeader />
 			
 			<div className="max-w-7xl mx-auto px-6 py-8">
-				{/* Header Section */}
-				<div className="mb-8">
-					<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-						<div>
-							<h1 className="text-3xl font-bold text-[#1C1B3A] mb-2">
-								Dr. {profile.firstName} {profile.lastName}
-							</h1>
-							<p className="text-lg text-slate-600">
-								{profile.specialty || 'Medical Professional'}
-							</p>
+				{/* Header Section with Profile Picture */}
+				<div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 mb-8">
+					<div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+						<div className="flex items-center space-x-6">
+							{/* Profile Picture */}
+							<div className="relative group">
+								<div className="w-24 h-24 bg-gradient-to-br from-[#1C1B3A] to-[#2A2951] rounded-full flex items-center justify-center text-white text-2xl font-semibold shadow-lg">
+									{profile.firstName?.[0]}{profile.lastName?.[0]}
+								</div>
+								<button className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+									<Camera className="w-6 h-6 text-white" />
+								</button>
+							</div>
+							
+							{/* Name and Title */}
+							<div>
+								<h1 className="text-3xl font-bold text-slate-900">
+									Dr. {profile.firstName} {profile.lastName}
+								</h1>
+								<p className="text-lg text-slate-600 mt-1">{profile.specialty}</p>
+								<div className="flex items-center mt-2 space-x-4">
+									<span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800">
+										<Stethoscope className="w-4 h-4 mr-1" />
+										{profile.experience} years experience
+									</span>
+									<span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+										<Award className="w-4 h-4 mr-1" />
+										AHPRA: {profile.ahpraNumber}
+									</span>
+								</div>
+							</div>
 						</div>
 						
 						{/* Status Badge */}
-						<div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border font-medium ${statusInfo.color}`}>
-							{statusInfo.icon}
-							<span>{statusInfo.label}</span>
+						<div className={`rounded-lg border p-4 ${statusInfo.color}`}>
+							<div className="flex items-center space-x-3">
+								{statusInfo.icon}
+								<div>
+									<h3 className="font-semibold">{statusInfo.label}</h3>
+									<p className="text-sm opacity-90">{statusInfo.description}</p>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
 
-				{/* Status Alert for pending states */}
-				{profile.status === 'pending_email_verification' && (
-					<div className="mb-8 bg-amber-50 border border-amber-200 rounded-xl p-6">
-						<div className="flex items-start gap-4">
-							<Mail className="w-6 h-6 text-amber-600 mt-1 flex-shrink-0" />
-							<div className="flex-1">
-								<h3 className="font-semibold text-amber-900 mb-2">Email Verification Required</h3>
-								<p className="text-amber-800 mb-4">
-									Please check your email and click the verification link to activate your account.
-								</p>
-								
-								{/* Resend Message */}
-								{resendMessage && (
-									<div className={`mb-4 p-3 rounded-lg text-sm ${
-										resendSuccess 
-											? 'bg-green-100 text-green-800 border border-green-200'
-											: 'bg-red-100 text-red-800 border border-red-200'
-									}`}>
-										{resendMessage}
-									</div>
-								)}
-
-								<button
-									onClick={handleResendEmail}
-									disabled={isResending}
-									className="inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white font-medium rounded-lg transition-colors duration-200"
-								>
-									<Mail className="w-4 h-4 mr-2" />
-									{isResending ? 'Sending...' : 'Resend Email'}
-								</button>
+				{/* Progress Timeline */}
+				<div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+					<h2 className="text-lg font-semibold text-slate-900 mb-6">Application Progress</h2>
+					<div className="flex items-center justify-between">
+						{/* Email Verification */}
+						<div className="flex flex-col items-center text-center">
+							<div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
+								['pending_review', 'approved'].includes(profile.status) 
+									? 'bg-green-500 text-white' 
+									: profile.status === 'pending_email_verification'
+									? 'bg-amber-500 text-white'
+									: 'bg-slate-300 text-slate-600'
+							}`}>
+								<Mail className="w-6 h-6" />
 							</div>
+							<span className="text-sm font-medium text-slate-900">Email Verified</span>
+							<span className="text-xs text-slate-500 mt-1">Step 1</span>
+						</div>
+
+						<div className={`flex-1 h-1 mx-4 ${
+							['pending_review', 'approved'].includes(profile.status) ? 'bg-green-500' : 'bg-slate-300'
+						}`}></div>
+
+						{/* Credential Review */}
+						<div className="flex flex-col items-center text-center">
+							<div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
+								profile.status === 'approved'
+									? 'bg-green-500 text-white' 
+									: profile.status === 'pending_review'
+									? 'bg-blue-500 text-white'
+									: 'bg-slate-300 text-slate-600'
+							}`}>
+								<FileText className="w-6 h-6" />
+							</div>
+							<span className="text-sm font-medium text-slate-900">Credential Review</span>
+							<span className="text-xs text-slate-500 mt-1">Step 2</span>
+						</div>
+
+						<div className={`flex-1 h-1 mx-4 ${
+							profile.status === 'approved' ? 'bg-green-500' : 'bg-slate-300'
+						}`}></div>
+
+						{/* Approval */}
+						<div className="flex flex-col items-center text-center">
+							<div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
+								profile.status === 'approved'
+									? 'bg-green-500 text-white' 
+									: 'bg-slate-300 text-slate-600'
+							}`}>
+								<CheckCircle2 className="w-6 h-6" />
+							</div>
+							<span className="text-sm font-medium text-slate-900">Approved</span>
+							<span className="text-xs text-slate-500 mt-1">Step 3</span>
 						</div>
 					</div>
-				)}
+				</div>
 
-				{profile.status === 'pending_review' && (
-					<div className="mb-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
-						<div className="flex items-start gap-4">
-							<Clock className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
-							<div className="flex-1">
-								<h3 className="font-semibold text-blue-900 mb-2">Application Under Review</h3>
-								<p className="text-blue-800">
-									Thank you for completing your registration. Our team is currently reviewing your credentials and application. We'll notify you once the review is complete.
-								</p>
-							</div>
-						</div>
-					</div>
-				)}
-
-				{/* Main Profile Content */}
-				<div className="grid lg:grid-cols-3 gap-8">
-					{/* Left Column - Personal & Contact Info */}
+				{/* Main Content Grid */}
+				<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+					{/* Left Column - Personal & Contact */}
 					<div className="lg:col-span-1 space-y-6">
 						{/* Personal Information */}
 						<div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-							<h2 className="text-xl font-semibold text-[#1C1B3A] mb-4 flex items-center">
-								<User className="w-5 h-5 mr-2" />
-								Personal Information
-							</h2>
+							<div className="flex items-center justify-between mb-6">
+								<div className="flex items-center space-x-3">
+									<div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+										<User className="w-5 h-5 text-blue-600" />
+									</div>
+									<h2 className="text-xl font-semibold text-slate-900">Personal Information</h2>
+								</div>
+								<button 
+									onClick={() => setEditMode(editMode === 'personal' ? null : 'personal')}
+									className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+								>
+									<Edit3 className="w-4 h-4" />
+								</button>
+							</div>
+							
 							<div className="space-y-4">
-								<div>
-									<label className="text-sm font-medium text-slate-500">Full Name</label>
-									<p className="text-slate-900 font-medium">{profile.firstName} {profile.lastName}</p>
+								<div className="grid grid-cols-2 gap-4">
+									<div>
+										<label className="text-sm font-medium text-slate-500">First Name</label>
+										<p className="text-slate-900 mt-1">{profile.firstName}</p>
+									</div>
+									<div>
+										<label className="text-sm font-medium text-slate-500">Last Name</label>
+										<p className="text-slate-900 mt-1">{profile.lastName}</p>
+									</div>
 								</div>
+								
 								<div>
-									<label className="text-sm font-medium text-slate-500">Email</label>
-									<p className="text-slate-900">{profile.email}</p>
+									<label className="text-sm font-medium text-slate-500">Email Address</label>
+									<p className="text-slate-900 flex items-center mt-1">
+										<Mail className="w-4 h-4 mr-2 text-slate-400" />
+										{profile.email}
+									</p>
 								</div>
+								
 								<div>
-									<label className="text-sm font-medium text-slate-500">Phone</label>
-									<p className="text-slate-900 flex items-center">
+									<label className="text-sm font-medium text-slate-500">Phone Number</label>
+									<p className="text-slate-900 flex items-center mt-1">
 										<Phone className="w-4 h-4 mr-2 text-slate-400" />
 										{profile.phone}
 									</p>
 								</div>
-								{(profile.city || profile.state || profile.postcode) && (
+							</div>
+						</div>
+
+						{/* Address Information */}
+						<div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+							<div className="flex items-center justify-between mb-6">
+								<div className="flex items-center space-x-3">
+									<div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+										<MapPin className="w-5 h-5 text-emerald-600" />
+									</div>
+									<h2 className="text-xl font-semibold text-slate-900">Address</h2>
+								</div>
+								<button 
+									onClick={() => setEditMode(editMode === 'address' ? null : 'address')}
+									className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+								>
+									<Edit3 className="w-4 h-4" />
+								</button>
+							</div>
+							
+							<div className="space-y-3">
+								{profile.addressStreet && (
 									<div>
-										<label className="text-sm font-medium text-slate-500">Location</label>
-										<p className="text-slate-900 flex items-center">
-											<MapPin className="w-4 h-4 mr-2 text-slate-400" />
-											{[profile.city, profile.state, profile.postcode].filter(Boolean).join(', ')}
-										</p>
+										<label className="text-sm font-medium text-slate-500">Street Address</label>
+										<p className="text-slate-900 mt-1">{profile.addressStreet}</p>
+									</div>
+								)}
+								<div className="grid grid-cols-2 gap-4">
+									<div>
+										<label className="text-sm font-medium text-slate-500">City</label>
+										<p className="text-slate-900 mt-1">{profile.city}</p>
+									</div>
+									<div>
+										<label className="text-sm font-medium text-slate-500">State</label>
+										<p className="text-slate-900 mt-1">{profile.state}</p>
+									</div>
+								</div>
+								<div className="grid grid-cols-2 gap-4">
+									<div>
+										<label className="text-sm font-medium text-slate-500">Postcode</label>
+										<p className="text-slate-900 mt-1">{profile.postcode}</p>
+									</div>
+									<div>
+										<label className="text-sm font-medium text-slate-500">Country</label>
+										<p className="text-slate-900 mt-1">{profile.addressCountry || 'Australia'}</p>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						{/* Quick Actions */}
+						<div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+							<h3 className="text-lg font-semibold text-slate-900 mb-4">Quick Actions</h3>
+							<div className="space-y-3">
+								<button className="w-full flex items-center justify-between p-3 text-left hover:bg-slate-50 rounded-lg transition-colors">
+									<div className="flex items-center space-x-3">
+										<Settings className="w-4 h-4 text-slate-400" />
+										<span className="text-sm font-medium text-slate-700">Account Settings</span>
+									</div>
+									<span className="text-slate-400">→</span>
+								</button>
+								<button className="w-full flex items-center justify-between p-3 text-left hover:bg-slate-50 rounded-lg transition-colors">
+									<div className="flex items-center space-x-3">
+										<Shield className="w-4 h-4 text-slate-400" />
+										<span className="text-sm font-medium text-slate-700">Privacy Settings</span>
+									</div>
+									<span className="text-slate-400">→</span>
+								</button>
+								<button className="w-full flex items-center justify-between p-3 text-left hover:bg-slate-50 rounded-lg transition-colors">
+									<div className="flex items-center space-x-3">
+										<FileText className="w-4 h-4 text-slate-400" />
+										<span className="text-sm font-medium text-slate-700">Download Documents</span>
+									</div>
+									<span className="text-slate-400">→</span>
+								</button>
+							</div>
+						</div>
+					</div>
+
+					{/* Right Column - Professional Information */}
+					<div className="lg:col-span-2 space-y-6">
+						{/* Professional Details */}
+						<div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+							<div className="flex items-center justify-between mb-6">
+								<div className="flex items-center space-x-3">
+									<div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+										<Stethoscope className="w-5 h-5 text-purple-600" />
+									</div>
+									<h2 className="text-xl font-semibold text-slate-900">Professional Information</h2>
+								</div>
+								<button 
+									onClick={() => setEditMode(editMode === 'professional' ? null : 'professional')}
+									className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+								>
+									<Edit3 className="w-4 h-4" />
+								</button>
+							</div>
+							
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+								<div>
+									<label className="text-sm font-medium text-slate-500">Medical Specialty</label>
+									<p className="text-slate-900 mt-1 font-medium">{profile.specialty}</p>
+								</div>
+								
+								<div>
+									<label className="text-sm font-medium text-slate-500">Years of Experience</label>
+									<p className="text-slate-900 mt-1">{profile.experience} years</p>
+								</div>
+								
+								<div>
+									<label className="text-sm font-medium text-slate-500">AHPRA Number</label>
+									<p className="text-slate-900 mt-1 font-mono">{profile.ahpraNumber}</p>
+								</div>
+								
+								<div>
+									<label className="text-sm font-medium text-slate-500">Registration Year</label>
+									<p className="text-slate-900 mt-1">{profile.ahpraRegistrationDate}</p>
+								</div>
+								
+								{profile.currentRegistrationStatus && (
+									<div className="md:col-span-2">
+										<label className="text-sm font-medium text-slate-500">Registration Status</label>
+										<p className="text-slate-900 mt-1">{profile.currentRegistrationStatus}</p>
 									</div>
 								)}
 							</div>
 						</div>
 
-						{/* Professional Registration */}
-						<div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-							<h2 className="text-xl font-semibold text-[#1C1B3A] mb-4 flex items-center">
-								<FileText className="w-5 h-5 mr-2" />
-								Registration Details
-							</h2>
-							<div className="space-y-4">
-								<div>
-									<label className="text-sm font-medium text-slate-500">AHPRA Number</label>
-									<p className="text-slate-900 font-mono">{profile.ahpraNumber}</p>
+						{/* Qualifications & Languages */}
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+							{/* Qualifications */}
+							<div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+								<div className="flex items-center justify-between mb-4">
+									<div className="flex items-center space-x-3">
+										<div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+											<BookOpen className="w-4 h-4 text-amber-600" />
+										</div>
+										<h3 className="text-lg font-semibold text-slate-900">Qualifications</h3>
+									</div>
+									<button className="p-1 text-slate-400 hover:text-slate-600 rounded">
+										<Edit3 className="w-3 h-3" />
+									</button>
 								</div>
-								<div>
-									<label className="text-sm font-medium text-slate-500">Registration Year</label>
-									<p className="text-slate-900 flex items-center">
-										<Calendar className="w-4 h-4 mr-2 text-slate-400" />
-										{new Date(profile.ahpraRegistrationDate).getFullYear()}
-									</p>
+								<div className="space-y-2">
+									{profile.qualifications && profile.qualifications.length > 0 ? (
+										profile.qualifications.map((qual, index) => (
+											<div key={index} className="flex items-center space-x-2">
+												<div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+												<span className="text-sm text-slate-700">{qual}</span>
+											</div>
+										))
+									) : (
+										<p className="text-sm text-slate-500 italic">No qualifications added yet</p>
+									)}
+									<button className="text-sm text-blue-600 hover:text-blue-700 font-medium mt-2">
+										+ Add Qualification
+									</button>
 								</div>
-								<div>
-									<label className="text-sm font-medium text-slate-500">Years of Experience</label>
-									<p className="text-slate-900">{profile.experience} years</p>
+							</div>
+
+							{/* Languages */}
+							<div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+								<div className="flex items-center justify-between mb-4">
+									<div className="flex items-center space-x-3">
+										<div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+											<Languages className="w-4 h-4 text-indigo-600" />
+										</div>
+										<h3 className="text-lg font-semibold text-slate-900">Languages</h3>
+									</div>
+									<button className="p-1 text-slate-400 hover:text-slate-600 rounded">
+										<Edit3 className="w-3 h-3" />
+									</button>
+								</div>
+								<div className="space-y-2">
+									{profile.languagesSpoken && profile.languagesSpoken.length > 0 ? (
+										profile.languagesSpoken.map((lang, index) => (
+											<span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800 mr-2 mb-2">
+												{lang}
+											</span>
+										))
+									) : (
+										<p className="text-sm text-slate-500 italic">No languages specified</p>
+									)}
+									<button className="text-sm text-blue-600 hover:text-blue-700 font-medium mt-2 block">
+										+ Add Language
+									</button>
 								</div>
 							</div>
 						</div>
-					</div>
 
-					{/* Right Column - Professional Details */}
-					<div className="lg:col-span-2 space-y-6">
-						{/* Medical Specialty */}
-						<div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-							<h2 className="text-xl font-semibold text-[#1C1B3A] mb-4 flex items-center">
-								<Stethoscope className="w-5 h-5 mr-2" />
-								Medical Specialty
-							</h2>
-							<div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
-								<p className="text-lg font-medium text-[#1C1B3A]">
-									{profile.specialty || 'General Practice'}
-								</p>
+						{/* Current Roles & Consultation Types */}
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+							{/* Current Roles */}
+							<div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+								<div className="flex items-center justify-between mb-4">
+									<div className="flex items-center space-x-3">
+										<div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+											<Building className="w-4 h-4 text-green-600" />
+										</div>
+										<h3 className="text-lg font-semibold text-slate-900">Current Roles</h3>
+									</div>
+									<button className="p-1 text-slate-400 hover:text-slate-600 rounded">
+										<Edit3 className="w-3 h-3" />
+									</button>
+								</div>
+								<div className="space-y-2">
+									{profile.currentRoles && profile.currentRoles.length > 0 ? (
+										profile.currentRoles.map((role, index) => (
+											<div key={index} className="flex items-center space-x-2">
+												<div className="w-2 h-2 bg-green-500 rounded-full"></div>
+												<span className="text-sm text-slate-700">{role}</span>
+											</div>
+										))
+									) : (
+										<p className="text-sm text-slate-500 italic">No current roles specified</p>
+									)}
+									<button className="text-sm text-blue-600 hover:text-blue-700 font-medium mt-2">
+										+ Add Role
+									</button>
+								</div>
+							</div>
+
+							{/* Consultation Types */}
+							<div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+								<div className="flex items-center justify-between mb-4">
+									<div className="flex items-center space-x-3">
+										<div className="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center">
+											<Clock4 className="w-4 h-4 text-rose-600" />
+										</div>
+										<h3 className="text-lg font-semibold text-slate-900">Consultation Types</h3>
+									</div>
+									<button className="p-1 text-slate-400 hover:text-slate-600 rounded">
+										<Edit3 className="w-3 h-3" />
+									</button>
+								</div>
+								<div className="space-y-2">
+									{profile.consultationTypes && profile.consultationTypes.length > 0 ? (
+										profile.consultationTypes.map((type, index) => (
+											<span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-rose-100 text-rose-800 mr-2 mb-2">
+												{type}
+											</span>
+										))
+									) : (
+										<p className="text-sm text-slate-500 italic">No consultation types specified</p>
+									)}
+									<button className="text-sm text-blue-600 hover:text-blue-700 font-medium mt-2 block">
+										+ Add Consultation Type
+									</button>
+								</div>
 							</div>
 						</div>
 
-						{/* Application Status Timeline */}
-						<div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-							<h2 className="text-xl font-semibold text-[#1C1B3A] mb-4 flex items-center">
-								<Users className="w-5 h-5 mr-2" />
-								Application Progress
-							</h2>
-							<div className="space-y-4">
-								{/* Step 1 - Email Verification */}
-								<div className="flex items-center">
-									<div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-										profile.status !== 'pending_email_verification' 
-											? 'bg-green-500' 
-											: 'bg-amber-500'
-									}`}>
-										{profile.status !== 'pending_email_verification' ? (
-											<CheckCircle2 className="w-5 h-5 text-white" />
-										) : (
-											<Mail className="w-5 h-5 text-white" />
+						{/* Email Verification Section */}
+						{profile.status === 'pending_email_verification' && (
+							<div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+								<div className="flex items-center justify-between">
+									<div className="flex items-center space-x-3">
+										<Mail className="w-5 h-5 text-amber-600" />
+										<div>
+											<h3 className="font-semibold text-amber-900">Email Verification Required</h3>
+											<p className="text-sm text-amber-700">Please check your email and click the verification link to continue.</p>
+										</div>
+									</div>
+									
+									<div className="flex items-center space-x-4">
+										{resendMessage && (
+											<div className={`text-sm px-3 py-1 rounded ${resendSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+												{resendMessage}
+											</div>
 										)}
-									</div>
-									<div className="ml-4 flex-1">
-										<h3 className="text-sm font-medium text-slate-900">Email Verification</h3>
-										<p className="text-sm text-slate-500">Verify your email address</p>
-									</div>
-									<div className={`text-sm font-medium ${
-										profile.status !== 'pending_email_verification' 
-											? 'text-green-600' 
-											: 'text-amber-600'
-									}`}>
-										{profile.status !== 'pending_email_verification' ? 'Completed' : 'Required'}
-									</div>
-								</div>
-
-								{/* Step 2 - Credential Review */}
-								<div className="flex items-center">
-									<div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-										profile.status === 'approved' 
-											? 'bg-green-500' 
-											: profile.status === 'pending_review'
-											? 'bg-blue-500'
-											: 'bg-slate-300'
-									}`}>
-										{profile.status === 'approved' ? (
-											<CheckCircle2 className="w-5 h-5 text-white" />
-										) : profile.status === 'pending_review' ? (
-											<Clock className="w-5 h-5 text-white animate-pulse" />
-										) : (
-											<FileText className="w-5 h-5 text-slate-500" />
-										)}
-									</div>
-									<div className="ml-4 flex-1">
-										<h3 className="text-sm font-medium text-slate-900">Credential Review</h3>
-										<p className="text-sm text-slate-500">Our team will review your application and give you a call!</p>
-									</div>
-									<div className={`text-sm font-medium ${
-										profile.status === 'approved' 
-											? 'text-green-600' 
-											: profile.status === 'pending_review'
-											? 'text-blue-600'
-											: 'text-slate-500'
-									}`}>
-										{profile.status === 'approved' ? 'Completed' : 
-										 profile.status === 'pending_review' ? 'In Progress' : 'Pending'}
-									</div>
-								</div>
-
-								{/* Step 3 - Account Activation */}
-								<div className={`flex items-center ${profile.status !== 'approved' ? 'opacity-50' : ''}`}>
-									<div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-										profile.status === 'approved' 
-											? 'bg-green-500' 
-											: 'bg-slate-300'
-									}`}>
-										<CheckCircle2 className={`w-5 h-5 ${
-											profile.status === 'approved' ? 'text-white' : 'text-slate-500'
-										}`} />
-									</div>
-									<div className="ml-4 flex-1">
-										<h3 className="text-sm font-medium text-slate-900">Account Activation</h3>
-										<p className="text-sm text-slate-500">Access to HeyDoc platform and patient consultations</p>
-									</div>
-									<div className={`text-sm font-medium ${
-										profile.status === 'approved' ? 'text-green-600' : 'text-slate-500'
-									}`}>
-										{profile.status === 'approved' ? 'Active' : 'Pending'}
+										<button
+											onClick={handleResendEmail}
+											disabled={isResending}
+											className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+										>
+											{isResending ? 'Sending...' : 'Resend Email'}
+										</button>
 									</div>
 								</div>
 							</div>
-						</div>
-
-						{/* Next Steps */}
-						<div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-6">
-							<h2 className="text-xl font-semibold text-[#1C1B3A] mb-4">What's Next?</h2>
-							{profile.status === 'pending_email_verification' ? (
-								<div className="space-y-3 text-sm text-slate-700">
-									<p className="flex items-start">
-										<span className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-										Check your email for the verification link
-									</p>
-									<p className="flex items-start">
-										<span className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-										Click "Accept Invitation" in the email
-									</p>
-									<p className="flex items-start">
-										<span className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-										Set up your permanent password
-									</p>
-								</div>
-							) : profile.status === 'pending_review' ? (
-								<div className="space-y-3 text-sm text-slate-700">
-									<p className="flex items-start">
-										<span className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-										Our team is verifying your AHPRA registration
-									</p>
-									<p className="flex items-start">
-										<span className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-										We're reviewing your professional background and qualifications
-									</p>
-									<p className="flex items-start">
-										<span className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-										You'll receive an email notification once approved
-									</p>
-								</div>
-							) : profile.status === 'approved' ? (
-								<div className="space-y-3 text-sm text-slate-700">
-									<p className="flex items-start">
-										<span className="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-										Your account is now active and ready to use
-									</p>
-									<p className="flex items-start">
-										<span className="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-										You can start accepting patient consultations
-									</p>
-									<p className="flex items-start">
-										<span className="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-										Access your doctor dashboard to manage appointments
-									</p>
-								</div>
-							) : (
-								<p className="text-sm text-slate-700">
-									Please contact our support team for assistance with your application.
-								</p>
-							)}
-						</div>
-					</div>
-				</div>
-
-				{/* Support Section */}
-				<div className="mt-8 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-					<div className="flex items-center justify-between">
-						<div>
-							<h3 className="text-lg font-semibold text-[#1C1B3A] mb-2">Need Help?</h3>
-							<p className="text-slate-600">
-								Have questions about your application or need to update your information?
-							</p>
-						</div>
-						<a
-							href="mailto:admin@heydochealth.com.au"
-							className="inline-flex items-center px-6 py-3 bg-[#1C1B3A] hover:bg-[#2A2951] text-white font-medium rounded-lg transition-colors"
-						>
-							<Mail className="w-4 h-4 mr-2" />
-							Contact Support
-						</a>
+						)}
 					</div>
 				</div>
 			</div>
 		</div>
+	)
+}
+
+function ProfileLoading() {
+	return (
+		<div className="flex items-center justify-center min-h-screen">
+			<div className="text-center">
+				<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1C1B3A] mx-auto mb-4"></div>
+				<p className="text-slate-600">Loading profile...</p>
+			</div>
+		</div>
+	)
+}
+
+export default function DoctorProfilePage() {
+	return (
+		<Suspense fallback={<ProfileLoading />}>
+			<DoctorProfileContent />
+		</Suspense>
 	)
 } 

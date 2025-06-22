@@ -1,3 +1,6 @@
+import { db } from '@/lib/db'
+import { doctors, users } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
 import { authService } from '../../../../lib/auth'
 import { validateConfig } from '../../../../lib/config'
@@ -27,18 +30,7 @@ export async function POST(request: NextRequest) {
 			)
 		}
 
-		// Check if user is active (for doctors, they need admin approval)
-		if (user.role === 'doctor' && user.status === 'pending') {
-			return NextResponse.json(
-				{ 
-					success: false, 
-					error: 'Your account is pending approval. Please wait for admin confirmation.',
-					isPending: true 
-				},
-				{ status: 403 }
-			)
-		}
-
+		// Only block inactive users - allow pending doctors to log in and see their profile
 		if (user.status === 'inactive') {
 			return NextResponse.json(
 				{ success: false, error: 'Your account has been deactivated. Please contact support.' },
@@ -46,7 +38,33 @@ export async function POST(request: NextRequest) {
 			)
 		}
 
-		// Return user data (excluding sensitive tokens for now)
+		// Get doctor's name if user is a doctor
+		let firstName = ''
+		let lastName = ''
+		
+		if (user.role === 'doctor') {
+			try {
+				const doctorProfile = await db
+					.select({
+						firstName: doctors.firstName,
+						lastName: doctors.lastName,
+					})
+					.from(doctors)
+					.innerJoin(users, eq(users.id, doctors.userId))
+					.where(eq(users.email, email))
+					.limit(1)
+				
+				if (doctorProfile.length > 0) {
+					firstName = doctorProfile[0].firstName
+					lastName = doctorProfile[0].lastName
+				}
+			} catch (dbError) {
+				console.error('Error fetching doctor name:', dbError)
+				// Continue without name - not critical for auth
+			}
+		}
+
+		// Return user data (including pending doctors)
 		return NextResponse.json({
 			success: true,
 			user: {
@@ -54,6 +72,8 @@ export async function POST(request: NextRequest) {
 				email: user.email,
 				role: user.role,
 				status: user.status,
+				firstName,
+				lastName,
 			},
 			// Note: In production, tokens should be stored in httpOnly cookies
 			accessToken: user.accessToken,

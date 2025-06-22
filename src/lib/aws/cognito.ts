@@ -9,6 +9,7 @@ import {
 	AuthFlowType,
 	ChallengeNameType,
 	CognitoIdentityProviderClient,
+	GetUserCommand,
 	GlobalSignOutCommand,
 	ListUsersCommand,
 	ResendConfirmationCodeCommand
@@ -516,6 +517,23 @@ export class CognitoService {
 			}
 			
 			return { success: false, error: error.message || 'Failed to set permanent password' }
+		}
+	}
+
+	/**
+	 * Validate access token by getting user info from Cognito
+	 */
+	async validateAccessToken(accessToken: string): Promise<boolean> {
+		try {
+			// Use GetUser command which validates the access token
+			await this.client.send(new GetUserCommand({
+				AccessToken: accessToken,
+			}))
+			
+			return true
+		} catch (error: any) {
+			console.error('Token validation failed:', error.name, error.message)
+			return false
 		}
 	}
 }
