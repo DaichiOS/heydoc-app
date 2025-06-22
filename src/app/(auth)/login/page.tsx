@@ -55,12 +55,13 @@ export default function LoginPage() {
 				{/* Logo */}
 				<div className="text-center mb-8">
 					<Image
-						src="/logos/heydoc.png"
+						src="/animations/heydoc.gif"
 						alt="HeyDoc"
 						width={300}
 						height={150}
 						className="mx-auto h-24 w-auto"
 						priority
+						unoptimized
 					/>
 				</div>
 

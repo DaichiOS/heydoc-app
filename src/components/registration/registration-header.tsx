@@ -10,14 +10,15 @@ export function RegistrationHeader() {
 	return (
 		<div className="bg-[#1C1B3A] border-b border-[#2A2951] shadow-lg">
 			<div className="flex items-center justify-between px-6 py-6">
-				<div className="flex items-center">
+				<div className="flex items-center ml-8">
 					<Image
-						src="/logos/heydoc.png"
+						src="/animations/heydoc-white.gif"
 						alt="HeyDoc"
 						width={280}
 						height={112}
 						className="h-20 w-auto"
 						priority
+						unoptimized
 					/>
 				</div>
 				<div className="flex items-center gap-4 mr-4">

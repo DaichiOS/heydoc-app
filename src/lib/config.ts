@@ -63,6 +63,7 @@ export function validateConfig() {
 		'AWS_SECRET_ACCESS_KEY',
 		'COGNITO_USER_POOL_ID',
 		'COGNITO_CLIENT_ID',
+		'COGNITO_CLIENT_SECRET',
 		'DATABASE_URL',
 		'S3_BUCKET_NAME',
 	]

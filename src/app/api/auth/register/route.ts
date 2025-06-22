@@ -10,6 +10,14 @@ const cognitoService = new CognitoService()
 export async function POST(request: NextRequest) {
 	try {
 		const body = await request.json()
+		
+		// Log the incoming request body for debugging (remove sensitive data in production)
+		console.log('Registration request received:', {
+			...body,
+			password: '[REDACTED]',
+			confirmPassword: '[REDACTED]'
+		})
+		
 		const {
 			type,
 			firstName,
@@ -21,16 +29,19 @@ export async function POST(request: NextRequest) {
 			ahpraNumber,
 			ahpraRegistrationDate,
 			practiceName,
-			practiceAddress,
 			city,
 			state,
 			postcode,
-			yearsExperience,
+			experience, // Frontend sends 'experience', not 'yearsExperience'
 			practiceDescription,
 		} = body
 
+		// Create practiceAddress from individual fields since frontend sends them separately
+		const practiceAddress = [city, state, postcode].filter(Boolean).join(', ')
+
 		// Validate required fields
 		if (!type || type !== 'doctor') {
+			console.log('Invalid registration type:', type)
 			return NextResponse.json(
 				{ error: 'Invalid registration type' },
 				{ status: 400 }
@@ -47,11 +58,10 @@ export async function POST(request: NextRequest) {
 			ahpraNumber,
 			ahpraRegistrationDate,
 			practiceName,
-			practiceAddress,
-			city,
+			city, // Check city instead of practiceAddress since that's what frontend sends
 			state,
 			postcode,
-			yearsExperience,
+			experience, // Check 'experience' instead of 'yearsExperience'
 		}
 
 		const missingFields = Object.entries(requiredFields)
@@ -59,6 +69,10 @@ export async function POST(request: NextRequest) {
 			.map(([key, _]) => key)
 
 		if (missingFields.length > 0) {
+			console.log('Missing required fields:', missingFields)
+			console.log('Received values:', Object.fromEntries(
+				Object.entries(requiredFields).map(([key, value]) => [key, value ? `"${value}"` : 'MISSING'])
+			))
 			return NextResponse.json(
 				{ error: `Missing required fields: ${missingFields.join(', ')}` },
 				{ status: 400 }
@@ -134,10 +148,13 @@ export async function POST(request: NextRequest) {
 			firstName,
 			lastName,
 			phone,
+			addressCity: city,
+			addressState: state,
+			addressPostcode: postcode,
 			medicalSpecialty: specialty,
 			ahpraNumber,
 			ahpraRegistrationDate: ahpraRegistrationDate,
-			yearsExperience: parseInt(yearsExperience.split('-')[0]) || 0, // Convert "0-2" to 0
+			yearsExperience: parseInt(experience.split('-')[0]) || 0,
 		})
 
 		return NextResponse.json({
