@@ -29,7 +29,21 @@ const initialSubmission: SubmissionState = {
 
 export function useRegistrationForm() {
 	const [currentStep, setCurrentStep] = useState<RegistrationStep>('selection')
-	const [selectedType, setSelectedType] = useState<UserType>(null)
+	const [selectedType, setSelectedType] = useState<UserType>(() => {
+		// Restore from localStorage if available (with Safari compatibility)
+		if (typeof window !== 'undefined') {
+			try {
+				const stored = localStorage.getItem('registrationSelectedType')
+				console.log('🔍 Restoring selectedType from localStorage:', stored)
+				if (stored === 'doctor' || stored === 'patient') {
+					return stored
+				}
+			} catch (error) {
+				console.error('❌ localStorage access failed (possibly Safari private mode):', error)
+			}
+		}
+		return null
+	})
 	const [isTransitioning, setIsTransitioning] = useState(false)
 	const [formData, setFormData] = useState<FormData>(initialFormData)
 	const [errors, setErrors] = useState<Partial<FormData>>({})
@@ -44,7 +58,17 @@ export function useRegistrationForm() {
 	}
 
 	const handleTypeSelection = (type: UserType) => {
+		console.log('🔍 Type selected:', type)
 		setSelectedType(type)
+		// Persist to localStorage (with Safari error handling)
+		if (typeof window !== 'undefined') {
+			try {
+				localStorage.setItem('registrationSelectedType', type || '')
+				console.log('✅ Type saved to localStorage:', type)
+			} catch (error) {
+				console.error('❌ Failed to save to localStorage (possibly Safari private mode):', error)
+			}
+		}
 		setTimeout(() => {
 			handleTransition('intro')
 		}, 500)
@@ -85,6 +109,37 @@ export function useRegistrationForm() {
 	const handleSubmit = async () => {
 		if (!validateCurrentStep()) return
 		
+		// Comprehensive debug logging for Safari/browser-specific debugging
+		console.log('🔍 Debug - Browser info:', {
+			userAgent: navigator.userAgent,
+			localStorage: typeof window !== 'undefined' ? !!window.localStorage : false,
+			isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+		})
+		console.log('🔍 Debug - selectedType:', selectedType)
+		console.log('🔍 Debug - currentStep:', currentStep)
+		console.log('🔍 Debug - formData:', formData)
+		console.log('🔍 Debug - localStorage registrationType:', 
+			typeof window !== 'undefined' ? localStorage.getItem('registrationSelectedType') : 'N/A'
+		)
+		
+		// Safeguard: If selectedType is null (due to page refresh or direct access),
+		// and we're past the selection step, default to 'doctor'
+		const registrationType = selectedType || (currentStep !== 'selection' ? 'doctor' : null)
+		
+		if (!registrationType) {
+			console.error('❌ No registration type selected')
+			setSubmission({
+				isSubmitting: false,
+				showModal: true,
+				success: false,
+				message: 'Please select whether you are registering as a doctor or patient.',
+			})
+			handleTransition('selection')
+			return
+		}
+		
+		console.log('🔍 Debug - Using registration type:', registrationType)
+		
 		try {
 			setSubmission({
 				isSubmitting: true,
@@ -93,16 +148,23 @@ export function useRegistrationForm() {
 				message: '',
 			})
 			
+			const requestBody = {
+				type: registrationType,
+				...formData,
+			}
+			
+			console.log('🔍 Debug - Request body being sent:', requestBody)
+			
 			const response = await fetch('/api/auth/register', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 				},
-				body: JSON.stringify({
-					type: selectedType,
-					...formData,
-				}),
+				body: JSON.stringify(requestBody),
 			})
+			
+			console.log('🔍 Debug - Response status:', response.status)
+			console.log('🔍 Debug - Response headers:', Object.fromEntries(response.headers.entries()))
 			
 			if (response.ok) {
 				const data = await response.json()
@@ -112,6 +174,8 @@ export function useRegistrationForm() {
 					// Store email in localStorage for the profile page
 					if (typeof window !== 'undefined') {
 						localStorage.setItem('registrationEmail', data.email)
+						// Clear registration type after successful registration
+						localStorage.removeItem('registrationSelectedType')
 					}
 					
 					// Hide modal and redirect immediately without showing intermediate success state
@@ -134,6 +198,8 @@ export function useRegistrationForm() {
 				}
 			} else {
 				const error = await response.json()
+				console.error('❌ Registration failed with status:', response.status)
+				console.error('❌ Error details:', error)
 				setSubmission({
 					isSubmitting: false,
 					showModal: true,

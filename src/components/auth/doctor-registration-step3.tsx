@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 
 interface DoctorFormData {
 	firstName: string
@@ -24,6 +23,8 @@ interface DoctorRegistrationStep3Props {
 	formData: DoctorFormData
 	updateFormData: (updates: Partial<DoctorFormData>) => void
 	onBack: () => void
+	onSubmit: () => void
+	isSubmitting: boolean
 }
 
 const AUSTRALIAN_STATES = [
@@ -47,30 +48,10 @@ const MEDICAL_SPECIALTIES = [
 export function DoctorRegistrationStep3({ 
 	formData, 
 	updateFormData, 
-	onBack 
+	onBack,
+	onSubmit,
+	isSubmitting
 }: DoctorRegistrationStep3Props) {
-	const [isSubmitting, setIsSubmitting] = useState(false)
-
-	const handleSubmit = async () => {
-		setIsSubmitting(true)
-		
-		try {
-			// TODO: Implement actual registration submission
-			console.log('Submitting doctor registration:', formData)
-			
-			// Simulate API call
-			await new Promise(resolve => setTimeout(resolve, 2000))
-			
-			// TODO: Redirect to success page or dashboard
-			alert('Registration submitted successfully!')
-		} catch (error) {
-			console.error('Registration error:', error)
-			alert('Registration failed. Please try again.')
-		} finally {
-			setIsSubmitting(false)
-		}
-	}
-
 	return (
 		<div className="space-y-8">
 			<div className="text-center">
@@ -139,7 +120,7 @@ export function DoctorRegistrationStep3({
 				{/* Submit Button */}
 				<div className="pt-4">
 					<button
-						onClick={handleSubmit}
+						onClick={onSubmit}
 						disabled={isSubmitting}
 						className="w-full bg-[#1C1B3A] text-white py-4 rounded-lg font-medium hover:bg-[#2A2951] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 					>
