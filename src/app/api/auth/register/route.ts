@@ -284,7 +284,7 @@ export async function POST(request: NextRequest) {
 			)
 		}
 
-		// TODO: Send custom verification email with link to /verify-email?email=user@example.com
+		// TODO: Send custom verification email with link to /verify-email/[token]
 		// For now, user will need to navigate to the verification link manually
 		
 		console.log('🎉 Doctor registration successful:', {

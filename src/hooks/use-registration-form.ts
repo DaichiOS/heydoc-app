@@ -1,5 +1,6 @@
 'use client'
 
+import { encodeEmailToken } from '@/lib/utils/token'
 import { validateStep1, validateStep2, validateStep3 } from '@/lib/validation'
 import type { FormData, RegistrationStep, SubmissionState, UserType } from '@/types'
 import { useState } from 'react'
@@ -186,8 +187,9 @@ export function useRegistrationForm() {
 						message: '',
 					})
 					
-					// Redirect immediately without delay
-					window.location.href = `/verify-email?email=${encodeURIComponent(data.email)}`
+					// Generate token from email and redirect to token-based URL
+					const emailToken = encodeEmailToken(data.email)
+					window.location.href = `/verify-email/${emailToken}`
 				} else {
 					setSubmission({
 						isSubmitting: false,

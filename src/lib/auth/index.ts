@@ -250,3 +250,48 @@ export const authService = new AuthService()
 
 // Export middleware for route protection (to be created)
 // export { authMiddleware } from './middleware'
+
+/**
+ * Encodes an email address into a URL-safe token using browser-compatible base64
+ */
+export function encodeEmailToken(email: string): string {
+	// Use browser-compatible base64 encoding
+	if (typeof window !== 'undefined') {
+		// Browser environment
+		return btoa(email).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+	} else {
+		// Node.js environment
+		return Buffer.from(email).toString('base64url')
+	}
+}
+
+/**
+ * Decodes a token back to an email address using browser-compatible base64
+ */
+export function decodeEmailToken(token: string): string | null {
+	try {
+		if (typeof window !== 'undefined') {
+			// Browser environment - restore base64 padding and convert URL-safe chars back
+			let base64 = token.replace(/-/g, '+').replace(/_/g, '/')
+			// Add padding if needed
+			while (base64.length % 4) {
+				base64 += '='
+			}
+			return atob(base64)
+		} else {
+			// Node.js environment
+			return Buffer.from(token, 'base64url').toString('utf-8')
+		}
+	} catch (error) {
+		console.error('Failed to decode email token:', error)
+		return null
+	}
+}
+
+/**
+ * Validates if a decoded token contains a valid email format
+ */
+export function isValidEmail(email: string): boolean {
+	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+	return emailRegex.test(email)
+}
