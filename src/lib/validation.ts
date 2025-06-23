@@ -9,6 +9,9 @@ export function validateStep1(formData: FormData): Partial<FormData> {
 	else if (!/\S+@\S+\.\S+/.test(formData.email)) errors.email = 'Please enter a valid email'
 	if (!formData.phone.trim()) errors.phone = 'Phone number is required'
 	if (!formData.specialty) errors.specialty = 'Please select your specialty'
+	if (formData.specialty === 'other' && !formData.customSpecialty.trim()) {
+		errors.customSpecialty = 'Please specify your specialty'
+	}
 	
 	return errors
 }

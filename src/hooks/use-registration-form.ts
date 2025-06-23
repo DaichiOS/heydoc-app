@@ -11,12 +11,10 @@ const initialFormData: FormData = {
 	email: '',
 	phone: '',
 	specialty: '',
+	customSpecialty: '',
 	ahpraNumber: '',
 	ahpraRegistrationDate: '',
 	practiceName: '',
-	city: '',
-	state: '',
-	postcode: '',
 	experience: '',
 	practiceDescription: '',
 }

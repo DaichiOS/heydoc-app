@@ -91,6 +91,19 @@ export function Step1({ formData, errors, updateFormData, onNext }: Step1Props) 
 							options={MEDICAL_SPECIALTIES}
 							required
 						/>
+						
+						{formData.specialty === 'other' && (
+							<FormField
+								label="Please specify your specialty"
+								name="customSpecialty"
+								placeholder="Enter your medical specialty"
+								value={formData.customSpecialty}
+								onChange={(value) => updateFormData('customSpecialty', value)}
+								onKeyDown={handleKeyDown}
+								error={errors.customSpecialty}
+								required
+							/>
+						)}
 					</div>
 				</div>
 			</div>

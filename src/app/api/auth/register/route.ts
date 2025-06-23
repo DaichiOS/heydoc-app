@@ -70,18 +70,11 @@ export async function POST(request: NextRequest) {
 			email,
 			phone,
 			specialty,
+			customSpecialty,
 			ahpraNumber,
 			ahpraRegistrationDate,
-			practiceName,
-			city,
-			state,
-			postcode,
 			experience, // Frontend sends 'experience', not 'yearsExperience'
-			practiceDescription,
 		} = body
-
-		// Create practiceAddress from individual fields since frontend sends them separately
-		const practiceAddress = [city, state, postcode].filter(Boolean).join(', ')
 
 		// Validate required fields
 		if (!type || type !== 'doctor') {
@@ -100,10 +93,6 @@ export async function POST(request: NextRequest) {
 			specialty,
 			ahpraNumber,
 			ahpraRegistrationDate,
-			practiceName,
-			city, // Check city instead of practiceAddress since that's what frontend sends
-			state,
-			postcode,
 			experience, // Check 'experience' instead of 'yearsExperience'
 		}
 
@@ -246,12 +235,9 @@ export async function POST(request: NextRequest) {
 			firstName,
 			lastName,
 			phone,
-			addressCity: city,
-			addressState: state,
-			addressPostcode: postcode,
-			medicalSpecialty: specialty,
+			medicalSpecialty: specialty === 'other' ? customSpecialty : specialty,
 			ahpraNumber,
-				ahpraRegistrationDate: registrationDate,
+			ahpraRegistrationDate: registrationDate,
 			yearsExperience: parseInt(experience.split('-')[0]) || 0,
 			}).returning({ id: doctors.id })
 

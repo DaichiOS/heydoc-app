@@ -1,5 +1,4 @@
 import { FormField } from '@/components/form/form-field'
-import { AUSTRALIAN_STATES } from '@/lib/constants'
 import type { FormData } from '@/types'
 
 interface Step2Props {
@@ -26,7 +25,7 @@ export function Step2({ formData, errors, updateFormData, onNext }: Step2Props) 
 						Practice details
 					</h1>
 					<p className="text-base text-slate-600 font-['Karla']">
-						Your AHPRA registration and practice location details.
+						Your AHPRA registration and practice details.
 					</p>
 				</div>
 				
@@ -62,39 +61,6 @@ export function Step2({ formData, errors, updateFormData, onNext }: Step2Props) 
 							onChange={(value) => updateFormData('practiceName', value)}
 							onKeyDown={handleKeyDown}
 							error={errors.practiceName}
-						/>
-						
-						<div className="grid grid-cols-2 gap-4">
-							<FormField
-								label="City"
-								name="city"
-								placeholder="Enter city"
-								value={formData.city}
-								onChange={(value) => updateFormData('city', value)}
-								onKeyDown={handleKeyDown}
-								error={errors.city}
-							/>
-							<FormField
-								label="State"
-								name="state"
-								type="select"
-								placeholder="Select state"
-								value={formData.state}
-								onChange={(value) => updateFormData('state', value)}
-								onKeyDown={handleKeyDown}
-								error={errors.state}
-								options={AUSTRALIAN_STATES}
-							/>
-						</div>
-						
-						<FormField
-							label="Postcode"
-							name="postcode"
-							placeholder="Enter postcode"
-							value={formData.postcode}
-							onChange={(value) => updateFormData('postcode', value)}
-							onKeyDown={handleKeyDown}
-							error={errors.postcode}
 						/>
 					</div>
 				</div>

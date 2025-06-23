@@ -1,6 +1,34 @@
 export const MEDICAL_SPECIALTIES = [
+	// General Medicine
 	{ value: 'general-practice', label: 'General Practice (GP)' },
-	{ value: 'fertility-specialist', label: 'Fertility Specialist' },
+	{ value: 'general-medicine', label: 'General Medicine (Physician)' },
+	{ value: 'emergency-medicine', label: 'Emergency Medicine' },
+	{ value: 'anaesthetics', label: 'Anaesthetics' },
+	{ value: 'paediatrics', label: 'Paediatrics' },
+	{ value: 'obstetrics-gynaecology', label: 'Obstetrics & Gynaecology (O&G)' },
+	{ value: 'psychiatry', label: 'Psychiatry' },
+	{ value: 'rehabilitation-pain-medicine', label: 'Rehabilitation & Pain Medicine' },
+	{ value: 'radiology-imaging', label: 'Radiology / Imaging' },
+	{ value: 'pathology-laboratory-medicine', label: 'Pathology / Laboratory Medicine' },
+	{ value: 'intensive-care-medicine', label: 'Intensive Care Medicine (ICU)' },
+	{ value: 'public-health-preventive-medicine', label: 'Public Health / Preventive Medicine' },
+	{ value: 'occupational-environmental-medicine', label: 'Occupational & Environmental Medicine' },
+	{ value: 'medical-administration', label: 'Medical Administration' },
+	{ value: 'medical-education', label: 'Medical Education' },
+	{ value: 'telehealth-virtual-care', label: 'Telehealth / Virtual Care' },
+	
+	// Surgical Specialties
+	{ value: 'general-surgery', label: 'General Surgery' },
+	{ value: 'orthopaedic-surgery', label: 'Orthopaedic Surgery' },
+	{ value: 'neurosurgery', label: 'Neurosurgery' },
+	{ value: 'urology', label: 'Urology' },
+	{ value: 'plastic-reconstructive-surgery', label: 'Plastic & Reconstructive Surgery' },
+	{ value: 'cardiothoracic-surgery', label: 'Cardiothoracic Surgery' },
+	{ value: 'vascular-surgery', label: 'Vascular Surgery' },
+	{ value: 'ent-otolaryngology', label: 'ENT (Otolaryngology – Head & Neck Surgery)' },
+	{ value: 'paediatric-surgery', label: 'Paediatric Surgery' },
+	
+	// Other option
 	{ value: 'other', label: 'Other' },
 ]
 

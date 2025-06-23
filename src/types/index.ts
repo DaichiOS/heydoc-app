@@ -216,12 +216,10 @@ export interface FormData {
 	email: string
 	phone: string
 	specialty: string
+	customSpecialty: string
 	ahpraNumber: string
 	ahpraRegistrationDate: string
 	practiceName: string
-	city: string
-	state: string
-	postcode: string
 	experience: string
 	practiceDescription: string
 }
