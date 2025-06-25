@@ -46,7 +46,7 @@ export const config = {
 	app: {
 		url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
 		environment: process.env.NODE_ENV || 'development',
-		jwtSecret: process.env.JWT_SECRET || 'your-jwt-secret-key',
+		jwtSecret: process.env.JWT_SECRET!,
 	},
 
 	// Email Configuration (for future use)
@@ -66,6 +66,7 @@ export function validateConfig() {
 		'COGNITO_CLIENT_SECRET',
 		'DATABASE_URL',
 		'S3_BUCKET_NAME',
+		'JWT_SECRET',
 	]
 
 	const missing = requiredEnvVars.filter(envVar => !process.env[envVar])

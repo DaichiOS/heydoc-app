@@ -3,6 +3,8 @@ import { doctors, users } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
 import { authService } from '../../../../lib/auth'
+import { setAuthCookies } from '../../../../lib/auth/cookies'
+import { createAuthTokens } from '../../../../lib/auth/jwt'
 import { validateConfig } from '../../../../lib/config'
 
 export async function POST(request: NextRequest) {
@@ -64,8 +66,16 @@ export async function POST(request: NextRequest) {
 			}
 		}
 
-		// Return user data (including pending doctors)
-		return NextResponse.json({
+		// Create JWT tokens
+		const tokens = createAuthTokens({
+			userId: user.id,
+			email: user.email,
+			role: user.role,
+			status: user.status,
+		})
+
+		// Create response with user data (no tokens in body)
+		const response = NextResponse.json({
 			success: true,
 			user: {
 				id: user.id,
@@ -75,9 +85,10 @@ export async function POST(request: NextRequest) {
 				firstName,
 				lastName,
 			},
-			// Note: In production, tokens should be stored in httpOnly cookies
-			accessToken: user.accessToken,
 		})
+
+		// Set httpOnly cookies
+		return setAuthCookies(response, tokens.accessToken, tokens.refreshToken)
 
 	} catch (error: any) {
 		console.error('Login API error:', error)

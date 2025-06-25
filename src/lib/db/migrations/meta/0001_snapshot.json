@@ -1,0 +1,981 @@
+{
+  "id": "f75250f0-d774-4eb7-9f92-9af578854bfb",
+  "prevId": "edecc64d-c3e1-49a0-8b43-541e4efc516f",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.admin_actions": {
+      "name": "admin_actions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuid_generate_v4()"
+        },
+        "admin_id": {
+          "name": "admin_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_id": {
+          "name": "target_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_type": {
+          "name": "target_type",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action": {
+          "name": "action",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'{}'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_admin_actions_admin_id": {
+          "name": "idx_admin_actions_admin_id",
+          "columns": [
+            {
+              "expression": "admin_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_admin_actions_target": {
+          "name": "idx_admin_actions_target",
+          "columns": [
+            {
+              "expression": "target_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "target_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_admin_actions_action": {
+          "name": "idx_admin_actions_action",
+          "columns": [
+            {
+              "expression": "action",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_admin_actions_created_at": {
+          "name": "idx_admin_actions_created_at",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "admin_actions_admin_id_users_id_fk": {
+          "name": "admin_actions_admin_id_users_id_fk",
+          "tableFrom": "admin_actions",
+          "tableTo": "users",
+          "columnsFrom": [
+            "admin_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.doctors": {
+      "name": "doctors",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuid_generate_v4()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "first_name": {
+          "name": "first_name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date_of_birth": {
+          "name": "date_of_birth",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone": {
+          "name": "phone",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "address_street": {
+          "name": "address_street",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address_city": {
+          "name": "address_city",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address_state": {
+          "name": "address_state",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address_postcode": {
+          "name": "address_postcode",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address_country": {
+          "name": "address_country",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'Australia'"
+        },
+        "ahpra_number": {
+          "name": "ahpra_number",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ahpra_registration_date": {
+          "name": "ahpra_registration_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "medical_specialty": {
+          "name": "medical_specialty",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "years_experience": {
+          "name": "years_experience",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "current_registration_status": {
+          "name": "current_registration_status",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "qualifications": {
+          "name": "qualifications",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "current_roles": {
+          "name": "current_roles",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "working_hours": {
+          "name": "working_hours",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "languages_spoken": {
+          "name": "languages_spoken",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "consultation_types": {
+          "name": "consultation_types",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "abn": {
+          "name": "abn",
+          "type": "varchar(11)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bank_account_name": {
+          "name": "bank_account_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bsb": {
+          "name": "bsb",
+          "type": "varchar(6)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "account_number": {
+          "name": "account_number",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tax_file_number": {
+          "name": "tax_file_number",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "insurance_provider_name": {
+          "name": "insurance_provider_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "insurance_policy_number": {
+          "name": "insurance_policy_number",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "insurance_expiry_date": {
+          "name": "insurance_expiry_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "insurance_coverage_amount": {
+          "name": "insurance_coverage_amount",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "documents": {
+          "name": "documents",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'{}'::jsonb"
+        },
+        "status": {
+          "name": "status",
+          "type": "doctor_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'email_unconfirmed'"
+        },
+        "approved_at": {
+          "name": "approved_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approved_by": {
+          "name": "approved_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_doctors_user_id": {
+          "name": "idx_doctors_user_id",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_doctors_status": {
+          "name": "idx_doctors_status",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_doctors_ahpra": {
+          "name": "idx_doctors_ahpra",
+          "columns": [
+            {
+              "expression": "ahpra_number",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_doctors_specialty": {
+          "name": "idx_doctors_specialty",
+          "columns": [
+            {
+              "expression": "medical_specialty",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "doctors_user_id_users_id_fk": {
+          "name": "doctors_user_id_users_id_fk",
+          "tableFrom": "doctors",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "doctors_approved_by_users_id_fk": {
+          "name": "doctors_approved_by_users_id_fk",
+          "tableFrom": "doctors",
+          "tableTo": "users",
+          "columnsFrom": [
+            "approved_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "doctors_ahpra_number_unique": {
+          "name": "doctors_ahpra_number_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "ahpra_number"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.document_uploads": {
+      "name": "document_uploads",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuid_generate_v4()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "doctor_id": {
+          "name": "doctor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "file_name": {
+          "name": "file_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "original_name": {
+          "name": "original_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "s3_key": {
+          "name": "s3_key",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "s3_url": {
+          "name": "s3_url",
+          "type": "varchar(1000)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "file_size": {
+          "name": "file_size",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mime_type": {
+          "name": "mime_type",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "document_type": {
+          "name": "document_type",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'active'"
+        },
+        "uploaded_at": {
+          "name": "uploaded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_document_uploads_user_id": {
+          "name": "idx_document_uploads_user_id",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_document_uploads_doctor_id": {
+          "name": "idx_document_uploads_doctor_id",
+          "columns": [
+            {
+              "expression": "doctor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_document_uploads_type": {
+          "name": "idx_document_uploads_type",
+          "columns": [
+            {
+              "expression": "document_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_document_uploads_s3_key": {
+          "name": "idx_document_uploads_s3_key",
+          "columns": [
+            {
+              "expression": "s3_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "document_uploads_user_id_users_id_fk": {
+          "name": "document_uploads_user_id_users_id_fk",
+          "tableFrom": "document_uploads",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "document_uploads_doctor_id_doctors_id_fk": {
+          "name": "document_uploads_doctor_id_doctors_id_fk",
+          "tableFrom": "document_uploads",
+          "tableTo": "doctors",
+          "columnsFrom": [
+            "doctor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "document_uploads_s3_key_unique": {
+          "name": "document_uploads_s3_key_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "s3_key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.patients": {
+      "name": "patients",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuid_generate_v4()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "first_name": {
+          "name": "first_name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date_of_birth": {
+          "name": "date_of_birth",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone": {
+          "name": "phone",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address_street": {
+          "name": "address_street",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address_city": {
+          "name": "address_city",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address_state": {
+          "name": "address_state",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address_postcode": {
+          "name": "address_postcode",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address_country": {
+          "name": "address_country",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'Australia'"
+        },
+        "medical_info": {
+          "name": "medical_info",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'{}'::jsonb"
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_patients_user_id": {
+          "name": "idx_patients_user_id",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_patients_status": {
+          "name": "idx_patients_status",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "patients_user_id_users_id_fk": {
+          "name": "patients_user_id_users_id_fk",
+          "tableFrom": "patients",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "uuid_generate_v4()"
+        },
+        "cognito_user_id": {
+          "name": "cognito_user_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_users_email": {
+          "name": "idx_users_email",
+          "columns": [
+            {
+              "expression": "email",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_users_cognito_id": {
+          "name": "idx_users_cognito_id",
+          "columns": [
+            {
+              "expression": "cognito_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_users_role": {
+          "name": "idx_users_role",
+          "columns": [
+            {
+              "expression": "role",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_cognito_user_id_unique": {
+          "name": "users_cognito_user_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "cognito_user_id"
+          ]
+        },
+        "users_email_unique": {
+          "name": "users_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.doctor_status": {
+      "name": "doctor_status",
+      "schema": "public",
+      "values": [
+        "email_unconfirmed",
+        "pending",
+        "interview_scheduled",
+        "documentation_required",
+        "active",
+        "rejected",
+        "suspended"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

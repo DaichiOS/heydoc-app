@@ -1,0 +1,3 @@
+CREATE TYPE "public"."doctor_status" AS ENUM('email_unconfirmed', 'pending', 'interview_scheduled', 'documentation_required', 'active', 'rejected', 'suspended');--> statement-breakpoint
+ALTER TABLE "doctors" ALTER COLUMN "status" SET DEFAULT 'email_unconfirmed'::"public"."doctor_status";--> statement-breakpoint
+ALTER TABLE "doctors" ALTER COLUMN "status" SET DATA TYPE "public"."doctor_status" USING "status"::"public"."doctor_status";

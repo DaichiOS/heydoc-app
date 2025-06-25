@@ -1,16 +1,28 @@
 import { sql } from 'drizzle-orm'
 import {
-    bigint,
-    date,
-    index,
-    integer,
-    jsonb,
-    pgTable,
-    text,
-    timestamp,
-    uuid,
-    varchar,
+	bigint,
+	date,
+	index,
+	integer,
+	jsonb,
+	pgEnum,
+	pgTable,
+	text,
+	timestamp,
+	uuid,
+	varchar,
 } from 'drizzle-orm/pg-core'
+
+// Doctor status enum - covers the full workflow
+export const doctorStatusEnum = pgEnum('doctor_status', [
+	'email_unconfirmed',
+	'pending', 
+	'interview_scheduled',
+	'documentation_required',
+	'active',
+	'rejected',
+	'suspended'
+])
 
 // Users table (linked to Cognito)
 export const users = pgTable('users', {
@@ -74,7 +86,7 @@ export const doctors = pgTable('doctors', {
 	documents: jsonb('documents').default({}),
 	
 	// Status and Approval
-	status: varchar('status', { length: 20 }).notNull().default('pending'),
+	status: doctorStatusEnum('status').notNull().default('email_unconfirmed'),
 	approvedAt: timestamp('approved_at', { withTimezone: true }),
 	approvedBy: uuid('approved_by').references(() => users.id),
 	
@@ -172,6 +184,7 @@ export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 export type Doctor = typeof doctors.$inferSelect
 export type NewDoctor = typeof doctors.$inferInsert
+export type DoctorStatus = typeof doctorStatusEnum.enumValues[number]
 export type Patient = typeof patients.$inferSelect
 export type NewPatient = typeof patients.$inferInsert
 export type AdminAction = typeof adminActions.$inferSelect

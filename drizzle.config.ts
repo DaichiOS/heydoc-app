@@ -9,7 +9,11 @@ export default defineConfig({
 	out: './src/lib/db/migrations',
 	dialect: 'postgresql',
 	dbCredentials: {
-		url: process.env.DATABASE_URL!,
+		host: 'localhost',
+		port: 5432,
+		user: 'postgres',
+		database: 'heydoc_local',
+		ssl: false,
 	},
 	verbose: true,
 	strict: true,
