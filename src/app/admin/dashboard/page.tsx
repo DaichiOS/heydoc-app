@@ -1,169 +1,143 @@
-'use client'
+import { requireServerAdmin } from '@/lib/auth/server'
+import { AdminService } from '@/lib/services/admin-service'
+import { Suspense } from 'react'
 
-import { AdminHeader } from '@/components/ui/admin-header'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-
-interface User {
-	id: string
-	email: string
-	role: string
-	status: string
+interface AdminDashboardStats {
+	pendingApplications: number
+	activeDoctors: number
+	totalPatients: number
+	totalUsers: number
 }
 
-export default function AdminDashboard() {
-	const [user, setUser] = useState<User | null>(null)
-	const [isLoading, setIsLoading] = useState(true)
-	const router = useRouter()
-
-	useEffect(() => {
-		// Check if user is authenticated and is admin
-		const authData = localStorage.getItem('heydoc_auth')
-		if (!authData) {
-			router.push('/login')
-			return
-		}
-
-		try {
-			const userData = JSON.parse(authData)
-			if (userData.role !== 'admin') {
-				router.push('/login')
-				return
-			}
-			setUser(userData)
-		} catch (error) {
-			router.push('/login')
-			return
-		}
+async function AdminDashboardContent() {
+	// Require admin authentication
+	const user = await requireServerAdmin()
+	
+	const adminService = new AdminService()
+	
+	try {
+		// Get dashboard statistics
+		const stats = await adminService.getDashboardStats()
 		
-		setIsLoading(false)
-	}, [router])
-
-	if (isLoading) {
 		return (
-			<div className="min-h-screen bg-background flex items-center justify-center">
-				<div className="text-center">
-					<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-					<p className="mt-2 text-muted-foreground">Loading...</p>
-				</div>
-			</div>
-		)
-	}
-
-	if (!user) {
-		return null // Will redirect to login
-	}
-
-	return (
-		<div className="min-h-screen bg-slate-50">
-			{/* Use the new AdminHeader component */}
-			<AdminHeader />
-
-			{/* Main Content */}
-			<main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-				{/* Welcome Section */}
+			<div className="container mx-auto px-4 py-8">
 				<div className="mb-8">
-					<h1 className="text-3xl font-bold text-foreground mb-2">
+					<h1 className="text-3xl font-bold text-gray-900">
 						Admin Dashboard
 					</h1>
-					<p className="text-muted-foreground">
-						Manage HeyDoc users, doctor applications, and system settings.
+					<p className="text-gray-600 mt-2">
+						Welcome back, {user.email}
 					</p>
 				</div>
 
-				{/* Stats Cards */}
+				{/* Dashboard Statistics */}
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-					<div className="bg-white rounded-xl p-6 border border-border">
-						<h3 className="text-sm font-medium text-muted-foreground mb-2">
+					<div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+						<h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
 							Pending Applications
 						</h3>
-						<p className="text-3xl font-bold text-heydoc-primary">0</p>
-						<p className="text-sm text-muted-foreground mt-1">
-							Doctor applications awaiting review
+						<p className="text-3xl font-bold text-orange-600 mt-2">
+							{stats.pendingApplications}
 						</p>
 					</div>
 					
-					<div className="bg-white rounded-xl p-6 border border-border">
-						<h3 className="text-sm font-medium text-muted-foreground mb-2">
+					<div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+						<h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
 							Active Doctors
 						</h3>
-						<p className="text-3xl font-bold text-success">0</p>
-						<p className="text-sm text-muted-foreground mt-1">
-							Approved and active doctors
+						<p className="text-3xl font-bold text-green-600 mt-2">
+							{stats.activeDoctors}
 						</p>
 					</div>
 					
-					<div className="bg-white rounded-xl p-6 border border-border">
-						<h3 className="text-sm font-medium text-muted-foreground mb-2">
+					<div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+						<h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
 							Total Patients
 						</h3>
-						<p className="text-3xl font-bold text-primary">0</p>
-						<p className="text-sm text-muted-foreground mt-1">
-							Registered patients
+						<p className="text-3xl font-bold text-blue-600 mt-2">
+							{stats.totalPatients}
 						</p>
 					</div>
 					
-					<div className="bg-white rounded-xl p-6 border border-border">
-						<h3 className="text-sm font-medium text-muted-foreground mb-2">
-							System Status
+					<div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+						<h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
+							Total Users
 						</h3>
-						<div className="flex items-center space-x-2">
-							<div className="w-3 h-3 bg-success rounded-full"></div>
-							<span className="text-sm font-medium text-success">Operational</span>
-						</div>
-						<p className="text-sm text-muted-foreground mt-1">
-							All systems running normally
+						<p className="text-3xl font-bold text-purple-600 mt-2">
+							{stats.totalUsers}
 						</p>
-					</div>
-				</div>
-
-				{/* Quick Actions */}
-				<div className="bg-white rounded-xl p-6 border border-border mb-8">
-					<h2 className="text-xl font-semibold text-foreground mb-4">
-						Quick Actions
-					</h2>
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-						<button className="p-4 text-left border border-border rounded-lg hover:bg-muted transition-colors">
-							<h3 className="font-medium text-foreground mb-1">
-								Review Applications
-							</h3>
-							<p className="text-sm text-muted-foreground">
-								Approve or reject doctor applications
-							</p>
-						</button>
-						
-						<button className="p-4 text-left border border-border rounded-lg hover:bg-muted transition-colors">
-							<h3 className="font-medium text-foreground mb-1">
-								Manage Users
-							</h3>
-							<p className="text-sm text-muted-foreground">
-								View and manage user accounts
-							</p>
-						</button>
-						
-						<button className="p-4 text-left border border-border rounded-lg hover:bg-muted transition-colors">
-							<h3 className="font-medium text-foreground mb-1">
-								System Settings
-							</h3>
-							<p className="text-sm text-muted-foreground">
-								Configure system preferences
-							</p>
-						</button>
 					</div>
 				</div>
 
 				{/* Recent Activity */}
-				<div className="bg-white rounded-xl p-6 border border-border">
-					<h2 className="text-xl font-semibold text-foreground mb-4">
-						Recent Activity
-					</h2>
-					<div className="text-center py-8">
-						<p className="text-muted-foreground">
-							No recent activity to display
+				<div className="bg-white rounded-lg shadow-md border border-gray-200">
+					<div className="px-6 py-4 border-b border-gray-200">
+						<h2 className="text-xl font-semibold text-gray-900">
+							Recent Activity
+						</h2>
+					</div>
+					<div className="p-6">
+						<p className="text-gray-500">
+							Recent activity dashboard coming soon...
 						</p>
 					</div>
 				</div>
-			</main>
+			</div>
+		)
+	} catch (error) {
+		console.error('Dashboard error:', error)
+		
+		return (
+			<div className="container mx-auto px-4 py-8">
+				<div className="bg-red-50 border border-red-200 rounded-lg p-6">
+					<h2 className="text-lg font-medium text-red-800 mb-2">
+						Dashboard Error
+					</h2>
+					<p className="text-red-600">
+						Failed to load dashboard data. Please try again later.
+					</p>
+				</div>
+			</div>
+		)
+	}
+}
+
+function DashboardLoadingSkeleton() {
+	return (
+		<div className="container mx-auto px-4 py-8">
+			<div className="mb-8">
+				<div className="h-8 bg-gray-200 rounded w-64 mb-2 animate-pulse"></div>
+				<div className="h-4 bg-gray-200 rounded w-48 animate-pulse"></div>
+			</div>
+
+			{/* Loading skeleton for stats */}
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+				{[...Array(4)].map((_, i) => (
+					<div key={i} className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+						<div className="h-4 bg-gray-200 rounded w-32 mb-2 animate-pulse"></div>
+						<div className="h-8 bg-gray-200 rounded w-16 animate-pulse"></div>
+					</div>
+				))}
+			</div>
+
+			{/* Loading skeleton for recent activity */}
+			<div className="bg-white rounded-lg shadow-md border border-gray-200">
+				<div className="px-6 py-4 border-b border-gray-200">
+					<div className="h-6 bg-gray-200 rounded w-40 animate-pulse"></div>
+				</div>
+				<div className="p-6">
+					<div className="h-4 bg-gray-200 rounded w-full mb-2 animate-pulse"></div>
+					<div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+				</div>
+			</div>
 		</div>
+	)
+}
+
+export default async function AdminDashboardPage() {
+	return (
+		<Suspense fallback={<DashboardLoadingSkeleton />}>
+			<AdminDashboardContent />
+		</Suspense>
 	)
 } 

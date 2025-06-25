@@ -1,111 +1,162 @@
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+'use client'
 
-interface AuthUser {
+import { useRouter } from 'next/navigation'
+import { useCallback, useEffect, useState } from 'react'
+
+export interface User {
 	id: string
 	email: string
-	role: 'admin' | 'doctor' | 'patient'
+	role: string
 	status: string
-	accessToken?: string
-	loginTime?: number
 }
 
-interface UseAuthReturn {
-	user: AuthUser | null
+export interface AuthState {
+	user: User | null
 	isLoading: boolean
 	isAuthenticated: boolean
-	logout: () => void
-	refreshSession: () => Promise<boolean>
 }
 
-export function useAuth(): UseAuthReturn {
-	const [user, setUser] = useState<AuthUser | null>(null)
-	const [isLoading, setIsLoading] = useState(true)
+export function useAuth() {
+	const [authState, setAuthState] = useState<AuthState>({
+		user: null,
+		isLoading: true,
+		isAuthenticated: false,
+	})
 	const router = useRouter()
 
-	const logout = () => {
-		localStorage.removeItem('heydoc_auth')
-		setUser(null)
-		router.push('/login')
-	}
-
-	const refreshSession = async (): Promise<boolean> => {
-		const authData = localStorage.getItem('heydoc_auth')
-		if (!authData) return false
-
+	// Check authentication status
+	const checkAuth = useCallback(async () => {
 		try {
-			const userData = JSON.parse(authData)
-			
-			// Check if session is too old (24 hours)
-			const sessionAge = Date.now() - (userData.loginTime || 0)
-			const maxSessionAge = 24 * 60 * 60 * 1000 // 24 hours
-			
-			if (sessionAge > maxSessionAge) {
-				console.log('Session expired due to age')
-				logout()
-				return false
+			const response = await fetch('/api/auth/validate-session', {
+				method: 'GET',
+				credentials: 'include',
+			})
+
+			if (response.ok) {
+				const { user } = await response.json()
+				setAuthState({
+					user,
+					isLoading: false,
+					isAuthenticated: true,
+				})
+			} else {
+				setAuthState({
+					user: null,
+					isLoading: false,
+					isAuthenticated: false,
+				})
 			}
-
-			// Validate session data structure
-			if (!userData.email || !userData.role) {
-				throw new Error('Invalid session data')
-			}
-
-			// Validate access token with backend if available
-			if (userData.accessToken) {
-				try {
-					const response = await fetch('/api/auth/validate-session', {
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-						},
-						body: JSON.stringify({ accessToken: userData.accessToken }),
-					})
-
-					const result = await response.json()
-					
-					if (!result.success) {
-						console.log('Token validation failed:', result.error)
-						logout()
-						return false
-					}
-				} catch (error) {
-					console.error('Token validation request failed:', error)
-					// Don't logout on network errors, just continue with local validation
-				}
-			}
-
-			setUser(userData)
-			return true
 		} catch (error) {
-			console.error('Session validation failed:', error)
-			logout()
-			return false
+			console.error('Auth check error:', error)
+			setAuthState({
+				user: null,
+				isLoading: false,
+				isAuthenticated: false,
+			})
 		}
-	}
-
-	useEffect(() => {
-		const initializeAuth = async () => {
-			setIsLoading(true)
-			await refreshSession()
-			setIsLoading(false)
-		}
-
-		initializeAuth()
-
-		// Set up periodic session validation (every 10 minutes)
-		const interval = setInterval(() => {
-			refreshSession()
-		}, 10 * 60 * 1000)
-
-		return () => clearInterval(interval)
 	}, [])
 
+	// Login function
+	const login = useCallback(async (email: string, password: string) => {
+		try {
+			const response = await fetch('/api/auth/login', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				credentials: 'include',
+				body: JSON.stringify({ email, password }),
+			})
+
+			const data = await response.json()
+
+			if (response.ok && data.success) {
+				setAuthState({
+					user: data.user,
+					isLoading: false,
+					isAuthenticated: true,
+				})
+				return { success: true }
+			} else {
+				return { 
+					success: false, 
+					error: data.error || 'Login failed' 
+				}
+			}
+		} catch (error) {
+			console.error('Login error:', error)
+			return { 
+				success: false, 
+				error: 'Network error occurred' 
+			}
+		}
+	}, [])
+
+	// Logout function
+	const logout = useCallback(async () => {
+		try {
+			await fetch('/api/auth/logout', {
+				method: 'POST',
+				credentials: 'include',
+			})
+		} catch (error) {
+			console.error('Logout error:', error)
+		} finally {
+			setAuthState({
+				user: null,
+				isLoading: false,
+				isAuthenticated: false,
+			})
+			router.push('/login')
+		}
+	}, [router])
+
+	// Check authentication on mount
+	useEffect(() => {
+		checkAuth()
+	}, [checkAuth])
+
+	// Redirect if not authenticated (for protected pages)
+	const requireAuth = useCallback((requiredRole?: string) => {
+		if (!authState.isLoading && !authState.isAuthenticated) {
+			router.push('/login')
+			return false
+		}
+
+		if (requiredRole && authState.user?.role !== requiredRole) {
+			router.push('/unauthorized')
+			return false
+		}
+
+		return true
+	}, [authState, router])
+
+	// Role checking helpers
+	const hasRole = useCallback((role: string) => {
+		return authState.user?.role === role
+	}, [authState.user])
+
+	const isAdmin = useCallback(() => {
+		return hasRole('admin')
+	}, [hasRole])
+
+	const isDoctor = useCallback(() => {
+		return hasRole('doctor')
+	}, [hasRole])
+
+	const isPatient = useCallback(() => {
+		return hasRole('patient')
+	}, [hasRole])
+
 	return {
-		user,
-		isLoading,
-		isAuthenticated: !!user,
+		...authState,
+		login,
 		logout,
-		refreshSession,
+		checkAuth,
+		requireAuth,
+		hasRole,
+		isAdmin,
+		isDoctor,
+		isPatient,
 	}
 } 

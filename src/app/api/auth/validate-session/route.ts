@@ -1,36 +1,33 @@
-import { cognitoService } from '@/lib/aws/cognito'
+import { getAuthUser } from '@/lib/auth/cookies'
 import { NextRequest, NextResponse } from 'next/server'
 
-export async function POST(request: NextRequest) {
+export async function GET(_request: NextRequest) {
 	try {
-		const { accessToken } = await request.json()
+		// Get user from JWT cookie
+		const user = await getAuthUser()
 
-		if (!accessToken) {
+		if (!user) {
 			return NextResponse.json(
-				{ success: false, error: 'Access token is required' },
-				{ status: 400 }
-			)
-		}
-
-		// Validate token with Cognito
-		const isValid = await cognitoService.validateAccessToken(accessToken)
-		
-		if (!isValid) {
-			return NextResponse.json(
-				{ success: false, error: 'Invalid or expired token' },
+				{ error: 'Not authenticated' },
 				{ status: 401 }
 			)
 		}
 
+		// Return user data without sensitive information
 		return NextResponse.json({
 			success: true,
-			message: 'Session is valid'
+			user: {
+				id: user.id,
+				email: user.email,
+				role: user.role,
+				status: user.status,
+			},
 		})
-
-	} catch (error: any) {
+	} catch (error) {
 		console.error('Session validation error:', error)
+		
 		return NextResponse.json(
-			{ success: false, error: 'Session validation failed' },
+			{ error: 'Session validation failed' },
 			{ status: 500 }
 		)
 	}
