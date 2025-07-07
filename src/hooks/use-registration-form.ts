@@ -168,7 +168,7 @@ export function useRegistrationForm() {
 			if (response.ok) {
 				const data = await response.json()
 				
-				// For email verification flow, store email and redirect immediately
+				// For email verification flow, store email and redirect with loading state
 				if (data.requiresEmailVerification && data.email) {
 					// Store email in localStorage for the profile page
 					if (typeof window !== 'undefined') {
@@ -177,17 +177,20 @@ export function useRegistrationForm() {
 						localStorage.removeItem('registrationSelectedType')
 					}
 					
-					// Hide modal and redirect immediately without showing intermediate success state
+					// Show redirect loading state
 					setSubmission({
 						isSubmitting: false,
-						showModal: false,
+						showModal: true,
 						success: true,
 						message: '',
+						redirecting: true,
 					})
 					
-					// Generate token from email and redirect to token-based URL
+					// Generate token from email and redirect after a brief delay for user experience
 					const emailToken = encodeEmailToken(data.email)
-					window.location.href = `/verify-email/${emailToken}`
+					setTimeout(() => {
+						window.location.href = `/verify-email/${emailToken}`
+					}, 1500) // 1.5 second delay to show the loading state with GIF
 				} else {
 					setSubmission({
 						isSubmitting: false,

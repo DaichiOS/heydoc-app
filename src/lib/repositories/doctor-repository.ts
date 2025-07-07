@@ -1,5 +1,5 @@
 import { Doctor, doctors, DoctorStatus, NewDoctor, User, users } from '@/lib/db/schema'
-import { and, asc, desc, eq, SQL } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, SQL } from 'drizzle-orm'
 import { BaseRepository, PaginationOptions, PaginationResult } from './base-repository'
 
 export interface DoctorWithUser extends Doctor {
@@ -148,10 +148,7 @@ export class DoctorRepository extends BaseRepository {
 
 			// Get paginated data with user information
 			const query = this.db
-				.select({
-					...doctors,
-					user: users,
-				})
+				.select()
 				.from(doctors)
 				.innerJoin(users, eq(doctors.userId, users.id))
 				.limit(limit)
@@ -165,8 +162,8 @@ export class DoctorRepository extends BaseRepository {
 			const result = await query
 			
 			const data = result.map(row => ({
-				...row,
-				user: row.user,
+				...row.doctors,
+				user: row.users,
 			})) as DoctorWithUser[]
 
 			return this.createPaginationResult(data, page, limit, total)
@@ -341,7 +338,7 @@ export class DoctorRepository extends BaseRepository {
 
 			return result
 				.map(row => row.specialty)
-				.filter(Boolean)
+				.filter((specialty): specialty is string => specialty !== null)
 				.sort()
 		} catch (error) {
 			console.error('Error getting specialties:', error)

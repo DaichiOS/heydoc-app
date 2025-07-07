@@ -15,6 +15,20 @@
       "when": 1750824877286,
       "tag": "0001_windy_slipstream",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1750834214327,
+      "tag": "0002_silly_unicorn",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1750835568779,
+      "tag": "0003_peaceful_alice",
+      "breakpoints": true
     }
   ]
 }

@@ -8,6 +8,8 @@ export interface User {
 	email: string
 	role: string
 	status: string
+	firstName?: string
+	lastName?: string
 }
 
 export interface AuthState {
@@ -47,7 +49,7 @@ export function useAuth() {
 				})
 			}
 		} catch (error) {
-			console.error('Auth check error:', error)
+			console.error('Auth check failed:', error)
 			setAuthState({
 				user: null,
 				isLoading: false,
@@ -59,6 +61,8 @@ export function useAuth() {
 	// Login function
 	const login = useCallback(async (email: string, password: string) => {
 		try {
+			setAuthState(prev => ({ ...prev, isLoading: true }))
+			
 			const response = await fetch('/api/auth/login', {
 				method: 'POST',
 				headers: {
@@ -70,27 +74,19 @@ export function useAuth() {
 
 			const data = await response.json()
 
-			if (response.ok && data.success) {
-				setAuthState({
-					user: data.user,
-					isLoading: false,
-					isAuthenticated: true,
-				})
-				return { success: true }
+			if (response.ok) {
+				await checkAuth() // Refresh auth state
+				return { success: true, data }
 			} else {
-				return { 
-					success: false, 
-					error: data.error || 'Login failed' 
-				}
+				setAuthState(prev => ({ ...prev, isLoading: false }))
+				return { success: false, error: data.error || 'Login failed' }
 			}
 		} catch (error) {
 			console.error('Login error:', error)
-			return { 
-				success: false, 
-				error: 'Network error occurred' 
-			}
+			setAuthState(prev => ({ ...prev, isLoading: false }))
+			return { success: false, error: 'Network error' }
 		}
-	}, [])
+	}, [checkAuth])
 
 	// Logout function
 	const logout = useCallback(async () => {
@@ -111,50 +107,29 @@ export function useAuth() {
 		}
 	}, [router])
 
-	// Check authentication on mount
+	// Helper functions
+	const isAdmin = useCallback(() => {
+		return authState.user?.role === 'admin'
+	}, [authState.user])
+
+	const isDoctor = useCallback(() => {
+		return authState.user?.role === 'doctor'
+	}, [authState.user])
+
+	const isPatient = useCallback(() => {
+		return authState.user?.role === 'patient'
+	}, [authState.user])
+
+	// Check auth on mount
 	useEffect(() => {
 		checkAuth()
 	}, [checkAuth])
-
-	// Redirect if not authenticated (for protected pages)
-	const requireAuth = useCallback((requiredRole?: string) => {
-		if (!authState.isLoading && !authState.isAuthenticated) {
-			router.push('/login')
-			return false
-		}
-
-		if (requiredRole && authState.user?.role !== requiredRole) {
-			router.push('/unauthorized')
-			return false
-		}
-
-		return true
-	}, [authState, router])
-
-	// Role checking helpers
-	const hasRole = useCallback((role: string) => {
-		return authState.user?.role === role
-	}, [authState.user])
-
-	const isAdmin = useCallback(() => {
-		return hasRole('admin')
-	}, [hasRole])
-
-	const isDoctor = useCallback(() => {
-		return hasRole('doctor')
-	}, [hasRole])
-
-	const isPatient = useCallback(() => {
-		return hasRole('patient')
-	}, [hasRole])
 
 	return {
 		...authState,
 		login,
 		logout,
 		checkAuth,
-		requireAuth,
-		hasRole,
 		isAdmin,
 		isDoctor,
 		isPatient,

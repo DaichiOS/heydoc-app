@@ -1,17 +1,11 @@
 'use client'
 
+import { useAuth } from '@/hooks/use-auth'
 import { LogOut, User } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-
-interface UserData {
-	email: string
-	role: 'admin' | 'doctor' | 'patient'
-	firstName?: string
-	lastName?: string
-}
 
 interface AppHeaderProps {
 	showQuestions?: boolean
@@ -26,48 +20,22 @@ export function AppHeader({
 	exitHref = '/login',
 	exitText = 'Exit'
 }: AppHeaderProps) {
-	const [isAuthenticated, setIsAuthenticated] = useState(false)
-	const [userDisplayName, setUserDisplayName] = useState('')
+	const { user, isAuthenticated, isLoading, logout } = useAuth()
 	const [showUserMenu, setShowUserMenu] = useState(false)
-	const [userData, setUserData] = useState<UserData | null>(null)
 	const router = useRouter()
 
-	useEffect(() => {
-		// Check if user is authenticated
-		const authData = localStorage.getItem('heydoc_auth')
-		if (authData) {
-			try {
-				const userData = JSON.parse(authData) as UserData
-				setIsAuthenticated(true)
-				
-				// Store user data for routing
-				setUserData(userData)
-				
-				// Create display name - prefer "Dr [LastName]" for doctors
-				if (userData.role === 'doctor' && userData.firstName && userData.lastName) {
-					setUserDisplayName(`Dr ${userData.lastName}`)
-				} else if (userData.firstName && userData.lastName) {
-					setUserDisplayName(`${userData.firstName} ${userData.lastName}`)
-				} else {
-					// Fallback to email if no name available
-					setUserDisplayName(userData.email)
-				}
-			} catch (error) {
-				setIsAuthenticated(false)
-				setUserDisplayName('')
-				setUserData(null)
-			}
-		} else {
-			setIsAuthenticated(false)
-			setUserDisplayName('')
-			setUserData(null)
-		}
-	}, [])
+	const userDisplayName = isAuthenticated && user ? (
+		// Create display name - prefer "Dr [LastName]" for doctors
+		user.role === 'doctor' && user.firstName && user.lastName
+			? `Dr ${user.lastName}`
+			: user.firstName && user.lastName
+			? `${user.firstName} ${user.lastName}`
+			: user.email
+	) : ''
 
-	const handleLogout = () => {
-		localStorage.removeItem('heydoc_auth')
-		localStorage.removeItem('registrationEmail')
+	const handleLogout = async () => {
 		setShowUserMenu(false)
+		await logout()
 		router.push('/login')
 	}
 
@@ -104,7 +72,7 @@ export function AppHeader({
 				</div>
 				<div className="flex items-center gap-4 mr-4">
 					{/* Show different options based on authentication status */}
-					{isAuthenticated ? (
+					{isAuthenticated && user ? (
 						/* Authenticated User - Show dropdown menu */
 						<div className="relative">
 							<button
@@ -135,13 +103,13 @@ export function AppHeader({
 								<div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50">
 									<div className="px-4 py-3 border-b border-slate-100">
 										<p className="text-sm font-medium text-slate-900">{userDisplayName}</p>
-										<p className="text-xs text-slate-500 mt-1">Logged in</p>
+										<p className="text-xs text-slate-500 mt-1">Logged in as {user.role}</p>
 									</div>
 									<div className="py-1">
 										<Link
 											href={
-												userData?.role === 'admin' ? '/admin/dashboard' :
-												userData?.role === 'doctor' ? '/doctor/profile' :
+												user.role === 'admin' ? '/admin/dashboard' :
+												user.role === 'doctor' ? '/doctor/profile' :
 												'/patient/dashboard'
 											}
 											className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"

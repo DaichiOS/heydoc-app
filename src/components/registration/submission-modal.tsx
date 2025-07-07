@@ -23,7 +23,30 @@ export function SubmissionModal({ submission, onClose }: SubmissionModalProps) {
 	return (
 		<div className="flex-1 flex items-center justify-center px-6 py-12">
 			<div className="max-w-2xl mx-auto w-full text-center">
-				{submission.isSubmitting ? (
+				{submission.redirecting ? (
+					<div className="bg-blue-50/60 rounded-2xl p-12 shadow-lg border border-blue-100/80">
+						<div className="mb-8">
+							<div className="w-32 h-32 mx-auto bg-white rounded-full flex items-center justify-center shadow-lg">
+								<img 
+									src="/animations/heydoc.gif" 
+									alt="HeyDoc loading animation" 
+									className="w-24 h-24 object-contain"
+								/>
+							</div>
+						</div>
+						<h3 className="text-3xl font-bold text-[#1C1B3A] mb-4 font-['Karla']">
+							Taking you to email verification...
+						</h3>
+						<p className="text-slate-600 mb-6 text-lg leading-relaxed">
+							Your account has been created successfully! We're redirecting you to complete your email verification.
+						</p>
+						<div className="flex items-center justify-center space-x-2">
+							<div className="w-3 h-3 bg-[#1C1B3A] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+							<div className="w-3 h-3 bg-[#1C1B3A] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+							<div className="w-3 h-3 bg-[#1C1B3A] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+						</div>
+					</div>
+				) : submission.isSubmitting ? (
 					<div className="bg-blue-50/60 rounded-2xl p-12 shadow-lg border border-blue-100/80">
 						<div className="mb-8">
 							<div className="w-20 h-20 mx-auto bg-[#DBEAFE] rounded-full flex items-center justify-center">

@@ -1,17 +1,10 @@
 'use client'
 
-import { LogOut, User, Users } from 'lucide-react'
+import { useAuth } from '@/hooks/use-auth'
+import { FileText, LogOut, Settings, User, Users } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-
-interface UserData {
-	email: string
-	role: 'admin' | 'doctor' | 'patient'
-	firstName?: string
-	lastName?: string
-}
 
 interface AdminHeaderProps {
 	showQuestions?: boolean
@@ -26,52 +19,8 @@ export function AdminHeader({
 	exitHref = '/login',
 	exitText = 'Exit'
 }: AdminHeaderProps) {
-	const [isAuthenticated, setIsAuthenticated] = useState(false)
-	const [userDisplayName, setUserDisplayName] = useState('')
+	const { user, isAuthenticated, isAdmin, logout } = useAuth()
 	const [showUserMenu, setShowUserMenu] = useState(false)
-	const [userData, setUserData] = useState<UserData | null>(null)
-	const router = useRouter()
-
-	useEffect(() => {
-		// Check if user is authenticated and is admin
-		const authData = localStorage.getItem('heydoc_auth')
-		if (authData) {
-			try {
-				const userData = JSON.parse(authData) as UserData
-				if (userData.role === 'admin') {
-					setIsAuthenticated(true)
-					setUserData(userData)
-					
-					// Create display name for admin
-					if (userData.firstName && userData.lastName) {
-						setUserDisplayName(`${userData.firstName} ${userData.lastName}`)
-					} else {
-						setUserDisplayName('Admin')
-					}
-				} else {
-					// Not an admin, redirect to appropriate page
-					router.push('/login')
-				}
-			} catch (error) {
-				setIsAuthenticated(false)
-				setUserDisplayName('')
-				setUserData(null)
-				router.push('/login')
-			}
-		} else {
-			setIsAuthenticated(false)
-			setUserDisplayName('')
-			setUserData(null)
-			router.push('/login')
-		}
-	}, [router])
-
-	const handleLogout = () => {
-		localStorage.removeItem('heydoc_auth')
-		localStorage.removeItem('registrationEmail')
-		setShowUserMenu(false)
-		router.push('/login')
-	}
 
 	// Close menu when clicking outside
 	useEffect(() => {
@@ -85,16 +34,24 @@ export function AdminHeader({
 		return () => document.removeEventListener('click', handleClickOutside)
 	}, [showUserMenu])
 
-	if (!isAuthenticated) {
-		return null // Don't render anything while redirecting
+	const handleLogout = async () => {
+		setShowUserMenu(false)
+		await logout()
 	}
+
+	// Don't render if not authenticated or not admin
+	if (!isAuthenticated || !isAdmin()) {
+		return null
+	}
+
+	const userDisplayName = user?.email?.split('@')[0] || 'Admin'
 
 	return (
 		<div className="bg-slate-900 border-b border-slate-800 shadow-lg">
 			<div className="flex items-center justify-between px-6 py-6">
 				<div className="flex items-center ml-8">
 					<Link 
-						href="/" 
+						href="/admin/dashboard" 
 						className="group transition-all duration-300 hover:scale-105 hover:brightness-110 active:scale-95"
 					>
 						<Image
@@ -113,8 +70,44 @@ export function AdminHeader({
 						</div>
 					</div>
 				</div>
+				
 				<div className="flex items-center gap-4 mr-4">
-					{/* Admin User - Show dropdown menu */}
+					{/* Quick Actions */}
+					<div className="hidden md:flex items-center gap-2">
+						<Link
+							href="/admin/dashboard"
+							className="flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-all duration-200 border border-slate-700 hover:border-slate-600"
+						>
+							<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v0M8 5a2 2 0 012-2h4a2 2 0 012 2v0" />
+							</svg>
+							<span>Dashboard</span>
+						</Link>
+						<Link
+							href="/admin/applications"
+							className="flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-all duration-200 border border-slate-700 hover:border-slate-600"
+						>
+							<FileText className="w-4 h-4" />
+							<span>Applications</span>
+						</Link>
+						<Link
+							href="/admin/users"
+							className="flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-all duration-200 border border-slate-700 hover:border-slate-600"
+						>
+							<Users className="w-4 h-4" />
+							<span>Users</span>
+						</Link>
+						<Link
+							href="/admin/settings"
+							className="flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-all duration-200 border border-slate-700 hover:border-slate-600"
+						>
+							<Settings className="w-4 h-4" />
+							<span>Settings</span>
+						</Link>
+					</div>
+					
+					{/* Admin User Menu */}
 					<div className="relative">
 						<button
 							onClick={(e) => {
@@ -141,37 +134,53 @@ export function AdminHeader({
 
 						{/* Admin Dropdown Menu */}
 						{showUserMenu && (
-							<div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-slate-200 py-2 z-50">
-								<div className="px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-amber-50 to-orange-50">
-									<p className="text-sm font-medium text-slate-900">{userDisplayName}</p>
-									<p className="text-xs text-amber-600 font-semibold mt-1 flex items-center">
-										<div className="w-2 h-2 bg-amber-500 rounded-full mr-2"></div>
-										Administrator
-									</p>
-								</div>
-								<div className="py-1">
-									<Link
-										href="/admin/dashboard"
-										className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-amber-50 hover:text-amber-800 transition-colors"
-										onClick={() => setShowUserMenu(false)}
-									>
-										<User className="w-4 h-4 mr-3 text-amber-500" />
-										Admin Dashboard
-									</Link>
-									<Link
-										href="/admin/users"
-										className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-amber-50 hover:text-amber-800 transition-colors"
-										onClick={() => setShowUserMenu(false)}
-									>
-										<Users className="w-4 h-4 mr-3 text-amber-500" />
-										Manage Users
-									</Link>
-									<div className="border-t border-slate-100 my-1"></div>
+							<div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50">
+															<div className="px-4 py-3 border-b border-slate-100">
+								<p className="text-sm font-medium text-slate-900">{user?.email}</p>
+								<p className="text-xs text-slate-500">Administrator</p>
+							</div>
+							
+							<Link
+								href="/admin/dashboard"
+								className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+							>
+								<svg className="w-4 h-4 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v0M8 5a2 2 0 012-2h4a2 2 0 012 2v0" />
+								</svg>
+								Dashboard
+							</Link>
+							
+							<Link
+								href="/admin/applications"
+								className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+							>
+								<FileText className="w-4 h-4 mr-3 text-slate-400" />
+								View Applications
+							</Link>
+							
+							<Link
+								href="/admin/users"
+								className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+							>
+								<Users className="w-4 h-4 mr-3 text-slate-400" />
+								Manage Users
+							</Link>
+
+							<Link
+								href="/admin/settings"
+								className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+							>
+								<Settings className="w-4 h-4 mr-3 text-slate-400" />
+								Settings
+							</Link>
+								
+								<div className="border-t border-slate-100 mt-2 pt-2">
 									<button
-										onClick={handleLogout}
-										className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+										onClick={logout}
+										className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
 									>
-										<LogOut className="w-4 h-4 mr-3" />
+										<LogOut className="w-4 h-4 mr-3 text-red-500" />
 										Sign Out
 									</button>
 								</div>

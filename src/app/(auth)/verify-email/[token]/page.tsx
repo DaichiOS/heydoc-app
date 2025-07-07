@@ -152,16 +152,10 @@ export default function VerifyEmailPage({ params }: VerifyEmailPageProps) {
 			const data = await response.json()
 
 			if (response.ok && data.success) {
-				// If auto-login was successful, store auth data
+				// Cookie-based auth is now handled by the API
+				// Just redirect to the appropriate page based on the response
 				if (data.user && data.accessToken) {
-					const authData = {
-						...data.user,
-						accessToken: data.accessToken,
-						loginTime: Date.now(),
-					}
-					localStorage.setItem('heydoc_auth', JSON.stringify(authData))
-					
-					// Redirect to doctor profile (no need for email param since we're authenticated)
+					// Auto-login was successful, redirect to doctor profile
 					router.push('/doctor/profile')
 				} else if (data.requiresLogin) {
 					// Password was set but auto-login failed, redirect to login with success message

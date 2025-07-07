@@ -230,4 +230,5 @@ export interface SubmissionState {
 	success: boolean
 	message: string
 	redirectUrl?: string
+	redirecting?: boolean
 } 

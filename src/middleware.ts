@@ -12,21 +12,39 @@ const PROTECTED_ROUTES = {
 // Define public routes that don't require authentication
 const PUBLIC_ROUTES = [
 	'/',
-	'/login',
-	'/register',
-	'/verify-email',
-	'/verify-email-sent',
 	'/api/auth/login',
 	'/api/auth/register',
 	'/api/auth/verify-email',
+	'/api/auth/verify-temp-password',
+	'/api/auth/set-permanent-password',
+	'/api/auth/resend-confirmation',
+	'/api/auth/validate-session',
+	'/api/auth/logout',
 	'/api/debug',
 	'/_next',
 	'/favicon.ico',
+	// Static asset paths from public folder
+	'/animations',
+	'/images',
+	'/logos',
 	'/public'
+]
+
+// Define routes that unauthenticated users can access, but authenticated users should be redirected from
+const UNAUTHENTICATED_ONLY_ROUTES = [
+	'/login',
+	'/register',
+	'/verify-email',
+	'/verify-email-sent'
 ]
 
 export async function middleware(request: NextRequest) {
 	const { pathname } = request.nextUrl
+	
+	// Skip middleware for static files (images, videos, etc.)
+	if (isStaticAsset(pathname)) {
+		return NextResponse.next()
+	}
 	
 	// Skip middleware for public routes, static files, and API routes that don't need auth
 	if (isPublicRoute(pathname)) {
@@ -36,6 +54,31 @@ export async function middleware(request: NextRequest) {
 	// Get the auth token from cookies
 	const token = request.cookies.get('heydoc_auth')?.value
 
+	// Check if this is an unauthenticated-only route
+	if (isUnauthenticatedOnlyRoute(pathname)) {
+		if (!token) {
+			// No token, allow access to unauthenticated routes
+			return NextResponse.next()
+		}
+		
+		try {
+			// Verify the JWT token
+			const user = await verifyToken(token)
+			
+			if (user) {
+				// User is authenticated, redirect to their dashboard
+				return redirectToDashboard(user.role, request)
+			} else {
+				// Invalid token, allow access to unauthenticated routes
+				return NextResponse.next()
+			}
+		} catch (error) {
+			// Token verification failed, allow access to unauthenticated routes
+			return NextResponse.next()
+		}
+	}
+
+	// For all other routes, require authentication
 	if (!token) {
 		return redirectToLogin(request)
 	}
@@ -51,11 +94,6 @@ export async function middleware(request: NextRequest) {
 		// Check role-based access
 		if (!hasRequiredRole(pathname, user.role)) {
 			return redirectToUnauthorized(request, user.role)
-		}
-
-		// If user is authenticated but tries to access auth pages, redirect to dashboard
-		if (isAuthRoute(pathname) && user) {
-			return redirectToDashboard(user.role)
 		}
 
 		// Add user info to request headers for server components
@@ -77,6 +115,21 @@ export async function middleware(request: NextRequest) {
 }
 
 /**
+ * Check if the request is for a static asset (images, videos, etc.)
+ */
+function isStaticAsset(pathname: string): boolean {
+	// Check file extensions for static assets
+	const staticExtensions = [
+		'.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.ico',
+		'.mp4', '.webm', '.mov', '.avi',
+		'.css', '.js', '.json', '.xml', '.txt',
+		'.woff', '.woff2', '.ttf', '.eot'
+	]
+	
+	return staticExtensions.some(ext => pathname.toLowerCase().endsWith(ext))
+}
+
+/**
  * Check if the route is public and doesn't require authentication
  */
 function isPublicRoute(pathname: string): boolean {
@@ -89,10 +142,12 @@ function isPublicRoute(pathname: string): boolean {
 }
 
 /**
- * Check if the route is an auth route
+ * Check if the route is for unauthenticated users only
  */
-function isAuthRoute(pathname: string): boolean {
-	return PROTECTED_ROUTES.auth.some(route => pathname.startsWith(route))
+function isUnauthenticatedOnlyRoute(pathname: string): boolean {
+	return UNAUTHENTICATED_ONLY_ROUTES.some(route => {
+		return pathname === route || pathname.startsWith(route + '/')
+	})
 }
 
 /**
@@ -130,16 +185,16 @@ function redirectToLogin(request: NextRequest): NextResponse {
 /**
  * Redirect to appropriate dashboard based on role
  */
-function redirectToDashboard(role: string): NextResponse {
+function redirectToDashboard(role: string, request: NextRequest): NextResponse {
 	switch (role) {
 		case 'admin':
-			return NextResponse.redirect(new URL('/admin/dashboard'))
+			return NextResponse.redirect(new URL('/admin/dashboard', request.url))
 		case 'doctor':
-			return NextResponse.redirect(new URL('/doctor/profile'))
+			return NextResponse.redirect(new URL('/doctor/profile', request.url))
 		case 'patient':
-			return NextResponse.redirect(new URL('/patient/dashboard'))
+			return NextResponse.redirect(new URL('/patient/dashboard', request.url))
 		default:
-			return NextResponse.redirect(new URL('/'))
+			return NextResponse.redirect(new URL('/', request.url))
 	}
 }
 
@@ -168,8 +223,8 @@ export const config = {
 		 * - _next/static (static files)
 		 * - _next/image (image optimization files)
 		 * - favicon.ico (favicon file)
-		 * - public (public files)
+		 * - static assets (images, videos, fonts, etc.)
 		 */
-		'/((?!api/debug|_next/static|_next/image|favicon.ico|public).*)',
+		'/((?!api/debug|_next/static|_next/image|favicon.ico).*)',
 	],
 } 

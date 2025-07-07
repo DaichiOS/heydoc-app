@@ -14,6 +14,7 @@ import {
 	ListUsersCommand,
 	ResendConfirmationCodeCommand
 } from '@aws-sdk/client-cognito-identity-provider'
+import crypto from 'crypto'
 import type {
 	CognitoAuthResult,
 	CognitoSignUpData,
@@ -36,6 +37,7 @@ export class CognitoService {
 				secretAccessKey: config.aws.secretAccessKey,
 			},
 		})
+		
 		this.userPoolId = config.cognito.userPoolId
 		this.clientId = config.cognito.clientId
 		this.clientSecret = config.cognito.clientSecret
@@ -279,7 +281,6 @@ export class CognitoService {
 	 * Calculate secret hash for Cognito client
 	 */
 	private calculateSecretHash(username: string): string {
-		const crypto = require('crypto')
 		const message = username + this.clientId
 		const hash = crypto.createHmac('sha256', this.clientSecret)
 		hash.update(message)

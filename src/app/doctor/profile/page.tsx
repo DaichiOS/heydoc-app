@@ -1,6 +1,7 @@
 'use client'
 
 import { AppHeader } from '@/components/ui/app-header'
+import { useAuth } from '@/hooks/use-auth'
 import { AlertCircle, Award, BookOpen, Building, Camera, CheckCircle2, Clock, Clock4, Edit3, FileText, Languages, Mail, MapPin, Phone, Settings, Shield, Stethoscope, User } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
@@ -33,11 +34,12 @@ type UserStatus = 'pending_email_verification' | 'pending_review' | 'approved' |
 
 // Component that uses useSearchParams - wrapped in Suspense
 function DoctorProfileContent() {
+	const { user, isAuthenticated, isLoading: authLoading } = useAuth()
 	const searchParams = useSearchParams()
 	const [profile, setProfile] = useState<DoctorProfile | null>(null)
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
-	const [userEmail, setUserEmail] = useState('')
+	const [userEmail, setUserEmail] = useState<string>('')
 	const [editMode, setEditMode] = useState<string | null>(null) // Track which section is being edited
 	
 	// Resend email state
@@ -48,23 +50,19 @@ function DoctorProfileContent() {
 	// Fetch doctor profile data
 	useEffect(() => {
 		const fetchProfile = async () => {
-			// Get email from auth data first (most reliable)
+			// Wait for auth to load
+			if (authLoading) return
+
+			// Get email from authenticated user
 			let email = ''
-			const authData = localStorage.getItem('heydoc_auth')
-			if (authData) {
-				try {
-					const userData = JSON.parse(authData)
-					email = userData.email
-				} catch (error) {
-					console.error('Error parsing auth data:', error)
-				}
+			if (isAuthenticated && user) {
+				email = user.email
 			}
 			
-			// Fallback to URL params or localStorage
+			// Fallback to URL params if needed
 			if (!email) {
 				const emailFromUrl = searchParams.get('email')
-				const emailFromStorage = localStorage.getItem('registrationEmail')
-				email = emailFromUrl || emailFromStorage || ''
+				email = emailFromUrl || ''
 			}
 
 			if (!email || email === 'your-email@example.com') {
@@ -99,7 +97,7 @@ function DoctorProfileContent() {
 		}
 
 		fetchProfile()
-	}, [searchParams]) // Remove userEmail dependency to prevent re-fetching
+	}, [searchParams, isAuthenticated, user, authLoading])
 
 	const handleResendEmail = async () => {
 		if (isResending || !userEmail || userEmail === 'your-email@example.com') return

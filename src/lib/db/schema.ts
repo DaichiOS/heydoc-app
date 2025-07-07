@@ -9,6 +9,7 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	unique,
 	uuid,
 	varchar,
 } from 'drizzle-orm/pg-core'
@@ -130,6 +131,32 @@ export const patients = pgTable('patients', {
 	statusIdx: index('idx_patients_status').on(table.status),
 }))
 
+// Admins table (admin-specific information)
+export const admins = pgTable('admins', {
+	id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+	userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+	
+	// Personal Information
+	firstName: varchar('first_name', { length: 100 }).notNull(),
+	lastName: varchar('last_name', { length: 100 }).notNull(),
+	phone: varchar('phone', { length: 20 }),
+	
+	// Admin-specific Information
+	calendlyLink: varchar('calendly_link', { length: 500 }),
+	department: varchar('department', { length: 100 }),
+	title: varchar('title', { length: 100 }),
+	
+	// Status
+	status: varchar('status', { length: 20 }).notNull().default('active'),
+	
+	// Timestamps
+	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+}, (table) => ({
+	userIdIdx: index('idx_admins_user_id').on(table.userId),
+	statusIdx: index('idx_admins_status').on(table.status),
+}))
+
 // Admin actions table (audit trail)
 export const adminActions = pgTable('admin_actions', {
 	id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
@@ -179,6 +206,18 @@ export const documentUploads = pgTable('document_uploads', {
 	s3KeyIdx: index('idx_document_uploads_s3_key').on(table.s3Key),
 }))
 
+// Admin settings table to store admin preferences like Calendly links
+export const adminSettings = pgTable('admin_settings', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	adminId: uuid('admin_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+	settingKey: varchar('setting_key', { length: 100 }).notNull(),
+	settingValue: text('setting_value'),
+	createdAt: timestamp('created_at').defaultNow(),
+	updatedAt: timestamp('updated_at').defaultNow(),
+}, (table) => ({
+	uniqueAdminSetting: unique().on(table.adminId, table.settingKey),
+}))
+
 // Export types for use in the application
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
@@ -187,7 +226,11 @@ export type NewDoctor = typeof doctors.$inferInsert
 export type DoctorStatus = typeof doctorStatusEnum.enumValues[number]
 export type Patient = typeof patients.$inferSelect
 export type NewPatient = typeof patients.$inferInsert
+export type Admin = typeof admins.$inferSelect
+export type NewAdmin = typeof admins.$inferInsert
 export type AdminAction = typeof adminActions.$inferSelect
 export type NewAdminAction = typeof adminActions.$inferInsert
 export type DocumentUpload = typeof documentUploads.$inferSelect
-export type NewDocumentUpload = typeof documentUploads.$inferInsert 
+export type NewDocumentUpload = typeof documentUploads.$inferInsert
+export type AdminSetting = typeof adminSettings.$inferSelect
+export type NewAdminSetting = typeof adminSettings.$inferInsert 

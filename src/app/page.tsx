@@ -1,46 +1,13 @@
 'use client'
 
 import { AppHeader } from '@/components/ui/app-header'
+import { useAuth } from '@/hooks/use-auth'
 import { ArrowRight } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
 
 export default function HomePage() {
-	const router = useRouter()
-	const [isAuthenticated, setIsAuthenticated] = useState(false)
-	const [isLoading, setIsLoading] = useState(true)
-	const [userData, setUserData] = useState<{ email: string; role: 'admin' | 'doctor' | 'patient'; firstName?: string; lastName?: string } | null>(null)
-
-	useEffect(() => {
-		// Check if user is already authenticated
-		const authData = localStorage.getItem('heydoc_auth')
-		if (authData) {
-			try {
-				const parsedUserData = JSON.parse(authData)
-				
-				// Validate that the auth data has required fields
-				if (parsedUserData.email && parsedUserData.role) {
-					setIsAuthenticated(true)
-					setUserData(parsedUserData)
-				} else {
-					throw new Error('Invalid auth data')
-				}
-			} catch (error) {
-				console.error('Invalid auth data:', error)
-				// Invalid auth data, clear it
-				localStorage.removeItem('heydoc_auth')
-				setIsAuthenticated(false)
-				setUserData(null)
-			}
-		} else {
-			setIsAuthenticated(false)
-			setUserData(null)
-		}
-		
-		setIsLoading(false)
-	}, [])
+	const { user, isAuthenticated, isLoading } = useAuth()
 
 	if (isLoading) {
 		return (
@@ -92,16 +59,16 @@ export default function HomePage() {
 
 					{/* CTA Buttons */}
 					<div className="flex flex-col sm:flex-row gap-4 justify-center">
-						{isAuthenticated ? (
+						{isAuthenticated && user ? (
 							<Link
 								href={
-									userData?.role === 'admin' ? '/admin/dashboard' :
-									userData?.role === 'doctor' ? '/doctor/profile' :
+									user.role === 'admin' ? '/admin/dashboard' :
+									user.role === 'doctor' ? '/doctor/profile' :
 									'/patient/dashboard'
 								}
 								className="inline-flex items-center justify-center px-8 py-4 bg-[#1C1B3A] hover:bg-[#252347] text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
 							>
-								{userData?.role === 'admin' ? 'Go to Dashboard' : 'Go to Profile'}
+								{user.role === 'admin' ? 'Go to Dashboard' : 'Go to Profile'}
 								<ArrowRight className="ml-2 w-5 h-5" />
 							</Link>
 						) : (
@@ -198,7 +165,6 @@ export default function HomePage() {
 							<div className="flex space-x-4 text-sm">
 								<a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
 								<a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-								<a href="#" className="hover:text-white transition-colors">Cookie Policy</a>
 							</div>
 						</div>
 					</div>

@@ -45,13 +45,8 @@ function LoginContent() {
 			const data = await response.json()
 
 			if (data.success) {
-				// Store auth data in localStorage with access token for validation
-				const authData = {
-					...data.user,
-					accessToken: data.accessToken,
-					loginTime: Date.now(), // Store login time for session expiry
-				}
-				localStorage.setItem('heydoc_auth', JSON.stringify(authData))
+				// Authentication is handled via JWT cookies set by the API
+				// No need to store auth data in localStorage anymore
 				
 				// Redirect based on role to correct routes
 				if (data.user.role === 'admin') {
