@@ -1,7 +1,23 @@
 import type { FormData } from '@/types'
 
-export function validateStep1(formData: FormData): Partial<FormData> {
-	const errors: Partial<FormData> = {}
+interface ValidationErrors {
+	firstName?: string
+	lastName?: string
+	email?: string
+	phone?: string
+	specialty?: string
+	customSpecialty?: string
+	ahpraNumber?: string
+	ahpraRegistrationDate?: string
+	practiceName?: string
+	experience?: string
+	practiceDescription?: string
+	trainingLevel?: string
+	workSituation?: string
+}
+
+export function validateStep1(formData: FormData): ValidationErrors {
+	const errors: ValidationErrors = {}
 	
 	if (!formData.firstName.trim()) errors.firstName = 'First name is required'
 	if (!formData.lastName.trim()) errors.lastName = 'Last name is required'
@@ -16,8 +32,8 @@ export function validateStep1(formData: FormData): Partial<FormData> {
 	return errors
 }
 
-export function validateStep2(formData: FormData): Partial<FormData> {
-	const errors: Partial<FormData> = {}
+export function validateStep2(formData: FormData): ValidationErrors {
+	const errors: ValidationErrors = {}
 	
 	if (!formData.ahpraNumber.trim()) errors.ahpraNumber = 'AHPRA number is required'
 	if (!formData.ahpraRegistrationDate.trim()) {
@@ -29,10 +45,13 @@ export function validateStep2(formData: FormData): Partial<FormData> {
 	return errors
 }
 
-export function validateStep3(formData: FormData): Partial<FormData> {
-	const errors: Partial<FormData> = {}
+export function validateStep3(formData: FormData): ValidationErrors {
+	const errors: ValidationErrors = {}
 	
-	if (!formData.experience) errors.experience = 'Please select years of experience'
+	if (!formData.trainingLevel) errors.trainingLevel = 'Training level is required'
+	if (!formData.workSituation || formData.workSituation.length === 0) {
+		errors.workSituation = 'Please select at least one work situation'
+	}
 	
 	return errors
 } 

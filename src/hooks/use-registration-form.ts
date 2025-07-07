@@ -5,6 +5,22 @@ import { validateStep1, validateStep2, validateStep3 } from '@/lib/validation'
 import type { FormData, RegistrationStep, SubmissionState, UserType } from '@/types'
 import { useState } from 'react'
 
+interface ValidationErrors {
+	firstName?: string
+	lastName?: string
+	email?: string
+	phone?: string
+	specialty?: string
+	customSpecialty?: string
+	ahpraNumber?: string
+	ahpraRegistrationDate?: string
+	practiceName?: string
+	experience?: string
+	practiceDescription?: string
+	trainingLevel?: string
+	workSituation?: string
+}
+
 const initialFormData: FormData = {
 	firstName: '',
 	lastName: '',
@@ -17,6 +33,8 @@ const initialFormData: FormData = {
 	practiceName: '',
 	experience: '',
 	practiceDescription: '',
+	trainingLevel: '',
+	workSituation: [],
 }
 
 const initialSubmission: SubmissionState = {
@@ -45,7 +63,7 @@ export function useRegistrationForm() {
 	})
 	const [isTransitioning, setIsTransitioning] = useState(false)
 	const [formData, setFormData] = useState<FormData>(initialFormData)
-	const [errors, setErrors] = useState<Partial<FormData>>({})
+	const [errors, setErrors] = useState<ValidationErrors>({})
 	const [submission, setSubmission] = useState<SubmissionState>(initialSubmission)
 
 	const handleTransition = (nextStep: RegistrationStep) => {
@@ -73,15 +91,16 @@ export function useRegistrationForm() {
 		}, 500)
 	}
 
-	const updateFormData = (field: keyof FormData, value: string) => {
+	const updateFormData = (field: keyof FormData, value: string | string[]) => {
 		setFormData(prev => ({ ...prev, [field]: value }))
-		if (errors[field]) {
+		// Clear error for updated field
+		if (errors[field as keyof ValidationErrors]) {
 			setErrors(prev => ({ ...prev, [field]: undefined }))
 		}
 	}
 
 	const validateCurrentStep = () => {
-		let newErrors: Partial<FormData> = {}
+		let newErrors: ValidationErrors = {}
 		
 		if (currentStep === 'step1') {
 			newErrors = validateStep1(formData)

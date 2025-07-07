@@ -5,7 +5,7 @@ import type { FormData } from '@/types'
 interface Step1Props {
 	formData: FormData
 	errors: Partial<FormData>
-	updateFormData: (field: keyof FormData, value: string) => void
+	updateFormData: (field: keyof FormData, value: string | string[]) => void
 	onNext: () => void
 }
 

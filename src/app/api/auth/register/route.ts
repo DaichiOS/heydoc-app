@@ -74,6 +74,8 @@ export async function POST(request: NextRequest) {
 			ahpraNumber,
 			ahpraRegistrationDate,
 			experience, // Frontend sends 'experience', not 'yearsExperience'
+			trainingLevel,
+			workSituation,
 		} = body
 
 		// Validate required fields
@@ -94,17 +96,24 @@ export async function POST(request: NextRequest) {
 			ahpraNumber,
 			ahpraRegistrationDate,
 			experience, // Check 'experience' instead of 'yearsExperience'
+			trainingLevel,
 		}
 
 		const missingFields = Object.entries(requiredFields)
 			.filter(([_, value]) => !value || value.trim() === '')
 			.map(([key, _]) => key)
 
+		// Check workSituation separately since it's an array
+		if (!workSituation || !Array.isArray(workSituation) || workSituation.length === 0) {
+			missingFields.push('workSituation')
+		}
+
 		if (missingFields.length > 0) {
 			console.log('❌ Missing required fields:', missingFields)
 			console.log('📋 Received values:', Object.fromEntries(
 				Object.entries(requiredFields).map(([key, value]) => [key, value ? `"${value}"` : 'MISSING'])
 			))
+			console.log('📋 Work situation:', workSituation)
 			return NextResponse.json(
 				{ error: `Missing required fields: ${missingFields.join(', ')}` },
 				{ status: 400 }
@@ -239,6 +248,8 @@ export async function POST(request: NextRequest) {
 			ahpraNumber,
 			ahpraRegistrationDate: registrationDate,
 			yearsExperience: parseInt(experience.split('-')[0]) || 0,
+			trainingLevel,
+			workSituation,
 			}).returning({ id: doctors.id })
 
 			if (doctorData.length === 0) {

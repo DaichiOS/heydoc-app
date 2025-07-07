@@ -222,6 +222,8 @@ export interface FormData {
 	practiceName: string
 	experience: string
 	practiceDescription: string
+	trainingLevel: string
+	workSituation: string[]
 }
 
 export interface SubmissionState {

@@ -1,10 +1,11 @@
 import { FormField } from '@/components/form/form-field'
+import { AHPRA_REGISTRATION_YEARS } from '@/lib/constants'
 import type { FormData } from '@/types'
 
 interface Step2Props {
 	formData: FormData
 	errors: Partial<FormData>
-	updateFormData: (field: keyof FormData, value: string) => void
+	updateFormData: (field: keyof FormData, value: string | string[]) => void
 	onNext: () => void
 }
 
@@ -45,11 +46,13 @@ export function Step2({ formData, errors, updateFormData, onNext }: Step2Props) 
 						<FormField
 							label="AHPRA Registration Year"
 							name="ahpraRegistrationDate"
-							placeholder="e.g. 2015"
+							type="select"
+							placeholder="Select your registration year"
 							value={formData.ahpraRegistrationDate}
 							onChange={(value) => updateFormData('ahpraRegistrationDate', value)}
 							onKeyDown={handleKeyDown}
 							error={errors.ahpraRegistrationDate}
+							options={AHPRA_REGISTRATION_YEARS}
 							helperText="What year did you first register with AHPRA as a medical practitioner?"
 						/>
 						

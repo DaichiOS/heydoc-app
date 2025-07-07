@@ -1,17 +1,17 @@
 import { sql } from 'drizzle-orm'
 import {
-	bigint,
-	date,
-	index,
-	integer,
-	jsonb,
-	pgEnum,
-	pgTable,
-	text,
-	timestamp,
-	unique,
-	uuid,
-	varchar,
+    bigint,
+    date,
+    index,
+    integer,
+    jsonb,
+    pgEnum,
+    pgTable,
+    text,
+    timestamp,
+    unique,
+    uuid,
+    varchar,
 } from 'drizzle-orm/pg-core'
 
 // Doctor status enum - covers the full workflow
@@ -64,6 +64,10 @@ export const doctors = pgTable('doctors', {
 	currentRegistrationStatus: varchar('current_registration_status', { length: 50 }),
 	qualifications: text('qualifications').array(),
 	
+	// Training and Work Information
+	trainingLevel: varchar('training_level', { length: 100 }),
+	workSituation: text('work_situation').array(),
+	
 	// Practice Information
 	currentRoles: text('current_roles').array(),
 	workingHours: text('working_hours'),
@@ -99,6 +103,7 @@ export const doctors = pgTable('doctors', {
 	statusIdx: index('idx_doctors_status').on(table.status),
 	ahpraIdx: index('idx_doctors_ahpra').on(table.ahpraNumber),
 	specialtyIdx: index('idx_doctors_specialty').on(table.medicalSpecialty),
+	trainingLevelIdx: index('idx_doctors_training_level').on(table.trainingLevel),
 }))
 
 // Patients table (for future use)

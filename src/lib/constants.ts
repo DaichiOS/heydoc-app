@@ -50,4 +50,42 @@ export const EXPERIENCE_RANGES = [
 	{ value: '11-15', label: '11-15 years' },
 	{ value: '16-20', label: '16-20 years' },
 	{ value: '20+', label: '20+ years' },
-] 
+]
+
+export const TRAINING_LEVELS = [
+	{ value: 'specialist-gp', label: 'Specialist GP (Fellow of RACGP or ACRRM)' },
+	{ value: 'non-gp-specialist', label: 'Non-GP Specialist (e.g. Fellow of RACP, RACS, etc.)' },
+	{ value: 'specialist-training', label: 'Specialist in training (e.g. Registrar on a College training program)' },
+	{ value: 'gp-training', label: 'General Practitioner in training (RACGP or ACRRM pathway)' },
+	{ value: 'hospital-non-specialist', label: 'Hospital non-specialist doctor (e.g. Resident, Intern, or Career Medical Officer)' },
+	{ value: 'img-fellow', label: 'International Medical Graduate (IMG) working toward fellowship' },
+	{ value: 'other', label: 'Other' },
+]
+
+export const WORK_SITUATIONS = [
+	{ value: 'solely-here', label: 'Exclusively consulting on HeyDoc' },
+	{ value: 'part-time-here', label: 'Part-time - HeyDoc platform' },
+	{ value: 'part-time-hospital', label: 'Part-time - Hospital setting' },
+	{ value: 'part-time-clinic', label: 'Part-time - Private clinic (e.g., GP, urgent care)' },
+	{ value: 'part-time-telehealth', label: 'Part-time - Other telehealth platforms' },
+	{ value: 'full-time-hospital', label: 'Full-time - Hospital setting' },
+	{ value: 'full-time-clinic', label: 'Full-time - Private clinic' },
+	{ value: 'full-time-telehealth', label: 'Full-time - Other telehealth platforms' },
+	{ value: 'on-leave', label: 'Currently on leave or reduced workload' },
+	{ value: 'studying-part-time', label: 'Part-time study commitments' },
+	{ value: 'studying-full-time', label: 'Full-time study commitments' },
+	{ value: 'other', label: 'Other work arrangement' },
+]
+
+// Generate AHPRA registration years from 70 years ago to current year
+export const AHPRA_REGISTRATION_YEARS = (() => {
+	const currentYear = new Date().getFullYear()
+	const startYear = currentYear - 70
+	const years = []
+	
+	for (let year = currentYear; year >= startYear; year--) {
+		years.push({ value: year.toString(), label: year.toString() })
+	}
+	
+	return years
+})() 
