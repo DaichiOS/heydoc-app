@@ -44,12 +44,12 @@ export const AUSTRALIAN_STATES = [
 ]
 
 export const EXPERIENCE_RANGES = [
-	{ value: '0-2', label: '0-2 years' },
+	{ value: 'less-than-1', label: 'Less than 1 year' },
+	{ value: '1-2', label: '1-2 years' },
 	{ value: '3-5', label: '3-5 years' },
 	{ value: '6-10', label: '6-10 years' },
-	{ value: '11-15', label: '11-15 years' },
-	{ value: '16-20', label: '16-20 years' },
-	{ value: '20+', label: '20+ years' },
+	{ value: '11-20', label: '11-20 years' },
+	{ value: '20+', label: 'More than 20 years' },
 ]
 
 export const TRAINING_LEVELS = [
