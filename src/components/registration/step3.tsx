@@ -1,10 +1,11 @@
 import { FormField } from '@/components/form/form-field'
 import { EXPERIENCE_RANGES, TRAINING_LEVELS, WORK_SITUATIONS } from '@/lib/constants'
+import type { ValidationErrors } from '@/lib/validation'
 import type { FormData } from '@/types'
 
 interface Step3Props {
 	formData: FormData
-	errors: Partial<FormData>
+	errors: ValidationErrors
 	updateFormData: (field: keyof FormData, value: string | string[]) => void
 	onSubmit: () => void
 }

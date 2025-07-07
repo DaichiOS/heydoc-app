@@ -1,25 +1,9 @@
 'use client'
 
 import { encodeEmailToken } from '@/lib/utils/token'
-import { validateStep1, validateStep2, validateStep3 } from '@/lib/validation'
+import { validateStep1, validateStep2, validateStep3, type ValidationErrors } from '@/lib/validation'
 import type { FormData, RegistrationStep, SubmissionState, UserType } from '@/types'
 import { useState } from 'react'
-
-interface ValidationErrors {
-	firstName?: string
-	lastName?: string
-	email?: string
-	phone?: string
-	specialty?: string
-	customSpecialty?: string
-	ahpraNumber?: string
-	ahpraRegistrationDate?: string
-	practiceName?: string
-	experience?: string
-	practiceDescription?: string
-	trainingLevel?: string
-	workSituation?: string
-}
 
 const initialFormData: FormData = {
 	firstName: '',

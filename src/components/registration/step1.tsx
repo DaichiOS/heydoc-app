@@ -1,10 +1,11 @@
 import { FormField } from '@/components/form/form-field'
 import { MEDICAL_SPECIALTIES } from '@/lib/constants'
+import type { ValidationErrors } from '@/lib/validation'
 import type { FormData } from '@/types'
 
 interface Step1Props {
 	formData: FormData
-	errors: Partial<FormData>
+	errors: ValidationErrors
 	updateFormData: (field: keyof FormData, value: string | string[]) => void
 	onNext: () => void
 }

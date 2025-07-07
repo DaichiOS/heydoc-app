@@ -1,6 +1,6 @@
 import type { FormData } from '@/types'
 
-interface ValidationErrors {
+export interface ValidationErrors {
 	firstName?: string
 	lastName?: string
 	email?: string
