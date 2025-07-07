@@ -1,6 +1,7 @@
 'use client'
 
 import { AdminHeader } from '@/components/ui/admin-header'
+import { BackButton } from '@/components/ui/back-button'
 import { useAuth } from '@/hooks/use-auth'
 import { useEffect, useState } from 'react'
 
@@ -121,6 +122,10 @@ export default function AdminSettingsPage() {
 			<AdminHeader />
 			
 			<div className="container mx-auto px-4 py-8">
+				<div className="mb-6">
+					<BackButton href="/admin/dashboard" label="Back to Dashboard" />
+				</div>
+				
 				<div className="mb-8">
 					<h1 className="text-3xl font-bold text-[#1C1B3A] mb-2">Admin Settings</h1>
 					<p className="text-slate-600">Manage your admin profile and preferences</p>

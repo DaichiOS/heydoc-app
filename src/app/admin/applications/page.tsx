@@ -1,6 +1,7 @@
 'use client'
 
 import { AdminHeader } from '@/components/ui/admin-header'
+import { BackButton } from '@/components/ui/back-button'
 import { useAuth } from '@/hooks/use-auth'
 import { Calendar, Clock, FileText, Mail, Phone, User, X } from 'lucide-react'
 import { Suspense, useEffect, useState } from 'react'
@@ -287,12 +288,16 @@ function ApplicationsContent() {
 			<AdminHeader />
 			
 			<div className="container mx-auto px-4 py-8">
+				<div className="mb-6">
+					<BackButton href="/admin/dashboard" label="Back to Dashboard" />
+				</div>
+				
 				<div className="mb-8">
 					<h1 className="text-3xl font-bold text-[#1C1B3A]">
 						Doctor Applications
 					</h1>
 					<p className="text-slate-600 mt-2">
-						Review and manage pending doctor applications ({totalApplications} total)
+						Review and manage doctor applications ({totalApplications} total)
 					</p>
 				</div>
 
